@@ -165,6 +165,14 @@ details.infob>summary::-webkit-details-marker{display:none}
 .curfl{font:700 1.5rem var(--f-mono);overflow-wrap:anywhere}
 .curcnt{font:700 1.5rem var(--f-display);font-variant-numeric:tabular-nums}
 .mine{display:flex;flex-direction:column;gap:4px}
+.repBar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 14px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.repBar .ri{display:flex;flex-direction:column;gap:2px;min-width:0}
+.repBar .rl{font:700 .68rem var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.repBar .rn{font-weight:700;font-size:.9rem;overflow-wrap:anywhere}
+.repBar .rb{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.repBar .rb button{min-height:42px;padding:.4em 1em}
+.repBar .chk{grid-column:1/-1}
+@media (max-width:560px){.repBar{grid-template-columns:1fr}.repBar .rb{justify-content:stretch}.repBar .rb button{flex:1}}
 .homeHd{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
 .mods{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 @media (max-width:1000px){.mods{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -360,6 +368,12 @@ button.u{min-height:0;padding:.25em .55em;font:600 .8rem var(--f-mono);border-ra
     <div><h1>Despacho Tai Loy</h1><div class="src">Hola, <b id="homeName">—</b> <button class="link" id="btnOp2" type="button">cambiar</button> · elige qué vas a hacer</div></div>
     <div class="sync" id="syncBar3"><span class="dot" id="syncDot3"></span><span id="syncTxt3"></span></div>
   </header>
+  <section class="repBar" aria-label="Reporte del turno">
+    <div class="ri"><span class="rl">Reporte del turno</span><span class="rn" id="repName">—</span><span class="small muted" id="repSel"></span></div>
+    <label class="chk small" id="repNuevoL" hidden><input id="repNuevo" type="checkbox"> <span>Turno nuevo (los conteos empiezan en cero)</span></label>
+    <div class="rb"><button type="button" id="repUp">Subir archivo 🔒</button><button type="button" id="repSave" class="primary" disabled>Guardar</button></div>
+    <input id="repFile" type="file" accept=".xlsx,.xlsm,.xls" hidden>
+  </section>
   <button class="avCard" id="btnAvance" type="button"><span class="t">Avance general 🔒</span><span class="go">›</span><span class="s" id="avHomeStat">Pickeado · Auditado · Embalado · Contabilizado · Anclado · Fijado · En sitio</span></button>
   <div class="mods">
     <button class="mod off" data-mod="auditado" type="button"><span class="num">1</span><span class="mt">Auditado</span><span class="md">Control de auditoría</span><span class="ms muted">En preparación</span></button>
@@ -1483,6 +1497,37 @@ $('avBody').addEventListener('click', e=>{ const b=e.target.closest('button[data
 for(const id of ['avQ','avFiltro']) $(id).addEventListener(id==='avQ'?'input':'change', renderAvance);
 $('avClear').addEventListener('click', ()=>{ for(const k in MSEL) MSEL[k].clear(); renderAvance(); });
 $('btnAvance').addEventListener('click', ()=>coordGate(()=>{ show('vAvance'); renderAvance(); }));
+/* ---------- subir / guardar reporte desde el inicio ---------- */
+let REP=null;
+function paintRep(){
+  $('repName').textContent = ST.bd ? (ST.bd.name||'Reporte')+(ST.bd.fecha?' · '+ST.bd.fecha:'')+(M.fletes.size?' · '+M.fletes.size+' transportes · '+M.bultos.size+' bultos':'') : 'Aún no hay reporte cargado';
+  $('repSave').disabled=!REP; $('repNuevoL').hidden=!REP || !CFG;
+}
+$('repUp').addEventListener('click', ()=>coordGate(()=>$('repFile').click()));
+$('repFile').addEventListener('change', async e=>{ const f=e.target.files[0]; e.target.value=''; if(!f) return;
+  try{ REP=readWorkbook(new Uint8Array(await f.arrayBuffer()), f.name); const m=build(REP.rows);
+    let txt='Archivo nuevo: '+f.name+(REP.fecha?' · '+REP.fecha:'')+' · '+m.fletes.size+' transportes · '+m.bultos.size+' bultos';
+    $('repNuevo').checked = !ST.bd || !!(REP.fecha && ST.bd.fecha && REP.fecha!==ST.bd.fecha);
+    if(ST.bd && !$('repNuevo').checked){ const dd=diffBd(ST.bd.rows, REP.rows); if(dd.length) txt+=' · '+dd.length+' bulto(s) cambiaron de transporte'; }
+    $('repSel').textContent=txt+' — toca Guardar.'; paintRep();
+  }catch(err){ REP=null; $('repSel').textContent=err.message||'No se pudo leer el archivo.'; paintRep(); } });
+$('repSave').addEventListener('click', ()=>coordGate(async ()=>{
+  if(!REP) return; const b=$('repSave'); b.disabled=true; b.textContent='Guardando…';
+  try{
+    if(CFG){
+      const nt=$('repNuevo').checked, nuevos=(!nt && ST.bd)?diffBd(ST.bd.rows, REP.rows):[], cambios=(!nt && ST.bd)?mergeCambios(ST.bd.cambios, nuevos):[];
+      await api({accion:'bd_set', clave_sup:COORD_PW, nuevo_turno:nt, name:REP.name+' · BD', fecha:REP.fecha, cols:KCOLS, rows:REP.rows, cambios}, 60000);
+      toast('Reporte guardado. Los celulares lo reciben en segundos.'+(nuevos.length?' '+nuevos.length+' bulto(s) cambiaron de transporte.':''));
+      REP=null; $('repSel').textContent=''; await pull();
+    } else {
+      const r=REP, same = ST.bd && (!r.fecha || !ST.bd.fecha || ST.bd.fecha===r.fecha), nuevos = same ? diffBd(ST.bd.rows, r.rows) : [];
+      setBd({version:String(Date.now()), turno:'local', name:r.name+' · BD', fecha:r.fecha, rows:r.rows, cambios: same ? mergeCambios(ST.bd.cambios, nuevos) : [], faltan:r.faltan||[]}, KCOLS);
+      toast('Reporte guardado: '+M.fletes.size+' transportes, '+M.bultos.size+' bultos.'); REP=null; $('repSel').textContent='';
+    }
+  }catch(err){ const m=String(err.message); if(m==='clave_sup'){ LK_MEM=null; lkSet(LK,null); toast('La clave de coordinadora no coincide con Google. Vuelve a entrar.'); } else toast('No se pudo guardar. Revisa la conexión.'); }
+  finally{ b.textContent='Guardar'; paintRep(); renderHome(); }
+}));
+
 /* ---------- clave de coordinadora ---------- */
 const LK='despacho_coord_v1', LKH='despacho_coord_hash_v1', LK_HRS=14;
 let COORD_PW='', LK_NEXT=null;
@@ -1564,6 +1609,7 @@ $('btnSitHome').addEventListener('click', ()=>goHome());
 /* ---------- inicio ---------- */
 const MODS={auditado:'Auditado', embalado:'Embalado', contabilizado:'Contabilizado'};
 function renderHome(){
+  if(typeof paintRep==='function') paintRep();
   $('homeName').textContent=ST.operario||'equipo'; $('btnOp2').hidden=!CFG;
   let cer=0; for(const id of M.fletes.keys()){ const e=estadoFlete(id)[0]; if(e==='cer'||e==='des') cer++; }
   if(M.fletes.size){ const rs=[...M.fletes.values()].map(avRow); const done=rs.filter(r=>r.allDone).length; $('avHomeStat').textContent=done+' de '+rs.length+' transportes con todas las etapas completas · '+rs.filter(r=>r.pick.done).length+' pickeados · '+rs.filter(r=>r.anc.done).length+' anclados'; }
