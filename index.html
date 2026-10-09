@@ -246,6 +246,9 @@ button.st:hover{filter:brightness(.96)}
 .sheet{z-index:30}
 #stageSheet{z-index:29}
 #infoSheet{z-index:28}
+@keyframes flashK{0%{box-shadow:0 0 0 3px var(--ok);transform:scale(1.04)}100%{box-shadow:0 0 0 0 transparent;transform:none}}
+button.flash{animation:flashK 1.6s ease-out}
+@media (prefers-reduced-motion:reduce){button.flash{animation:none;outline:2px solid var(--ok)}}
 #lockSheet{z-index:40}
 #lockSheet .card{display:flex;flex-direction:column;gap:10px}
 .lockOut{margin-left:auto}
@@ -1201,7 +1204,7 @@ function avRow(F, fz){
   const E=evalFlete(F.id), e=estadoFlete(F.id)[0], cc=bl.filter(u=>E.leidos.has(u)).length;
   const cont = e==='cer' ? {v:'Cerrado '+cc+'/'+nb, cls:'st-ok', done:true, who:E.cierre.resp+' '+hhmm(E.cierre.t).slice(0,5)}
     : e==='des' ? {v:'Cerrado c/ faltantes '+cc+'/'+nb, cls:'st-bad', done:true, who:E.cierre.resp}
-    : (cc ? {v:cc+'/'+nb+' bultos', cls: (cc===nb?'st-ok':'st-pro'), done:false, who:''} : {v:'Pendiente', cls:'st-pen', done:false, who:''});
+    : (cc ? {v:cc+'/'+nb+' bultos', cls: (cc===nb?'st-ok':'st-pro'), done:false, who:(()=>{ let l=null; for(const u of bl){ const s=E.leidos.get(u); if(s && (!l||s.t>l.t)) l=s; } return l?'últ. '+(l.op||'')+' '+hhmm(l.t).slice(0,5):''; })()} : {v:'Pendiente', cls:'st-pen', done:false, who:''});
   const r={F, nb, pick:{pct:pickPct, done:pickPct===100, n:tk.n, ok:tk.ok}, cont, anc:{v: ancPct===100?'Anclado':(ancPct?ancPct+'% anclado':'Pendiente'), cls: ancPct===100?'st-ok':(ancPct?'st-pro':'st-pen'), done:nb>0&&ancPct===100}};
   for(const st of STAGES) if(st.man) r[st.k]=manState(F.id, st);
   { const m=r.aud; m.n=nb; m.c = m.done ? nb : 0; m.v = m.done ? 'Completo' : m.c+'/'+nb; }
@@ -1255,6 +1258,10 @@ function renderAvance(){
     +'<td><div class="pk"><span class="bar"><i style="width:'+r.pick.pct+'%"></i></span><b>'+r.pick.pct+'%</b></div></td>'
     +bcell(r.aud,'aud',r.F.id)+bcell(r.emb,'emb',r.F.id)+bcell(r.cont,'cont',r.F.id)+bcell(r.anc,'anc',r.F.id)+mcell(r.fij,'fij',r.F.id)+mcell(r.sit,'sit',r.F.id)+'</tr>').join('')
     || '<tr><td colspan="11" class="empty">'+(M.fletes.size?'Ningún transporte coincide con el filtro.':'Aún no hay reporte del turno.')+'</td></tr>';
+  { const prev=renderAvance.prev||null, now=new Map();
+    $('avBody').querySelectorAll('button[data-det]').forEach(b=>{ const k=b.dataset.det+'|'+b.dataset.fl, v=b.querySelector('.top')?b.querySelector('.top').textContent:b.textContent; now.set(k,v); if(prev && prev.has(k) && prev.get(k)!==v){ b.classList.add('flash'); } });
+    renderAvance.prev=now; }
+  if(CFG) $('avSrc').textContent += ' · se actualiza solo cada 5 s';
 }
 /* ---------- picking según hoja BD ---------- */
 function bdTasks(){
@@ -1633,7 +1640,7 @@ function start(){
   if(CFG && !ST.operario){ show('vNombre'); setTimeout(()=>$('inNombre').focus(),50); return; }
   $('syncBar3').hidden=!CFG;
   goHome();
-  if(CFG){ pull(); if(!start.t){ start.t=setInterval(()=>{ if(!document.hidden) pull(); }, 8000); setInterval(paintSync, 5000); } }
+  if(CFG){ pull(); if(!start.t){ start.t=setInterval(()=>{ if(!document.hidden) pull(); }, 5000); setInterval(paintSync, 5000); } }
 }
 load(); M=build(ST.bd?ST.bd.rows:[], ST.bd?ST.bd.cambios:[]); refold(); start();
 </script>
