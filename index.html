@@ -1,0 +1,1594 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#8f1b1b"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Despacho"></head><body><title>Despacho Tai Loy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: app de andén en dos pantallas — lista de fletes del turno → flete abierto con barra de lectura fija y cierre */
+:root{
+  --mod:#8f1b1b; --mod-ink:#ffffff; --navy:#1f3a5f; --navy-ink:#ffffff; --grn:#1b6e2c; --grn-ink:#ffffff; --grn-hi:#2fbf3c;
+  --bg:#eef0ec; --surface:#ffffff; --surface2:#f5f6f3; --ink:#1a2125; --muted:#5b676c; --line:#d6dbd5;
+  --accent:#2445a3; --accent-ink:#ffffff;
+  --ok:#1d7a46; --ok-bg:#e1f2e7; --warn:#a35a00; --warn-bg:#fbeed9; --bad:#b3261e; --bad-bg:#fbe3e1; --info:#2e5d8a; --info-bg:#e2ecf6;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12171a; --surface:#1a2125; --surface2:#20282d; --ink:#e7ecea; --muted:#9aa7ab; --line:#2f3a3f;
+  --accent:#7d9cff; --accent-ink:#0d1430; --mod:#e07a7a; --mod-ink:#2a0b0b; --navy:#8fb3e0; --navy-ink:#0c1a2b; --grn:#5fd08e; --grn-ink:#0b2414; --grn-hi:#3aa94a;
+  --ok:#5fd08e; --ok-bg:#163525; --warn:#f0b35a; --warn-bg:#3a2a12; --bad:#ff8a80; --bad-bg:#3d1b19; --info:#8cbcea; --info-bg:#182b3d;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12171a; --surface:#1a2125; --surface2:#20282d; --ink:#e7ecea; --muted:#9aa7ab; --line:#2f3a3f;
+  --accent:#7d9cff; --accent-ink:#0d1430; --mod:#e07a7a; --mod-ink:#2a0b0b; --navy:#8fb3e0; --navy-ink:#0c1a2b; --grn:#5fd08e; --grn-ink:#0b2414; --grn-hi:#3aa94a;
+  --ok:#5fd08e; --ok-bg:#163525; --warn:#f0b35a; --warn-bg:#3a2a12; --bad:#ff8a80; --bad-bg:#3d1b19; --info:#8cbcea; --info-bg:#182b3d;
+  color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.4}
+.wrap{max-width:860px;margin:0 auto;padding-inline:16px;padding-block:14px 48px;display:flex;flex-direction:column;gap:14px}
+h1,h2{font-family:var(--f-display);font-weight:700;margin:0;text-wrap:balance}
+h1{font-size:1.75rem;line-height:1.05}
+h2{font-size:1.1rem;text-transform:uppercase;letter-spacing:.06em}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:.82rem}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.top>div{min-width:0}
+.src{font-size:.82rem;color:var(--muted);overflow-wrap:anywhere}
+button,.btn{font:600 .92rem var(--f-body);border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:.55em .9em;cursor:pointer;min-height:42px;display:inline-flex;align-items:center;justify-content:center;gap:.4em;text-decoration:none}
+button:focus-visible,input:focus-visible,.btn:focus-within{outline:3px solid var(--accent);outline-offset:2px}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.okb{background:var(--ok);color:var(--surface);border-color:var(--ok)}
+button.danger{color:var(--bad);border-color:var(--bad);background:var(--surface)}
+button:disabled{opacity:.45;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+input[type=text],input[type=search]{font:500 1rem var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:.55em .75em;min-height:44px;width:100%;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.bar{height:8px;border-radius:4px;background:var(--surface2);border:1px solid var(--line);overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--ok);transition:width .3s}
+.pill{display:inline-block;font:600 .68rem var(--f-body);text-transform:uppercase;letter-spacing:.06em;padding:.18em .55em;border-radius:20px;vertical-align:middle;white-space:nowrap}
+.p-ok{background:var(--ok-bg);color:var(--ok)} .p-warn{background:var(--warn-bg);color:var(--warn)} .p-bad{background:var(--bad-bg);color:var(--bad)} .p-info{background:var(--info-bg);color:var(--info)} .p-mute{background:var(--surface2);color:var(--muted);border:1px solid var(--line)}
+
+/* lista de fletes */
+.seg{display:flex;gap:4px;background:var(--surface2);border:1px solid var(--line);border-radius:9px;padding:3px}
+.seg button{border:0;background:none;min-height:34px;padding:.3em .7em;color:var(--muted)}
+.seg button[aria-pressed=true]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.sum{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+.kpi .n{font:700 1.8rem var(--f-display);line-height:1;font-variant-numeric:tabular-nums}
+.kpi .l{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-top:4px}
+.kpi.ok .n{color:var(--ok)} .kpi.warn .n{color:var(--warn)} .kpi.bad .n{color:var(--bad)}
+@media (max-width:480px){.sum{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.fletes{display:flex;flex-direction:column;gap:8px}
+.fl{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--line);border-radius:10px;padding:12px;cursor:pointer;text-align:left;width:100%;font-weight:400}
+.fl.s-car{border-left-color:var(--warn)} .fl.s-ok{border-left-color:var(--ok)} .fl.s-cer{border-left-color:var(--accent)} .fl.s-des{border-left-color:var(--bad)}
+.fl .fn{font:700 1.15rem var(--f-mono)}
+.fl .fm{grid-column:1 / -1;font-size:.82rem;color:var(--muted)}
+.fl .bar{grid-column:1 / -1}
+.fl .cnt{font:700 1.1rem var(--f-mono);text-align:right}
+
+/* flete abierto */
+.back{min-height:38px;padding:.3em .7em}
+.scan{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;box-shadow:0 6px 18px -12px rgba(0,0,0,.35)}
+.scanline{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px}
+#code{font:700 1.1rem var(--f-mono);letter-spacing:.03em}
+#code::placeholder{font:500 1rem var(--f-body);letter-spacing:0}
+.result{border-radius:10px;padding:12px 14px;display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:center;border:2px solid transparent}
+.result .tag{font:700 1.35rem var(--f-display);text-transform:uppercase;letter-spacing:.03em;line-height:1.1}
+.result .code{font:700 1.05rem var(--f-mono)}
+.result .det{grid-column:1 / -1;font-size:.88rem;color:var(--ink)}
+.r-ok{background:var(--ok-bg);border-color:var(--ok);color:var(--ok)}
+.r-warn{background:var(--warn-bg);border-color:var(--warn);color:var(--warn)}
+.r-bad{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}
+.r-info{background:var(--info-bg);border-color:var(--info);color:var(--info)}
+.r-idle{background:var(--surface2);border-color:var(--line);color:var(--muted)}
+.flash{animation:flash .45s ease-out}
+@keyframes flash{from{transform:scale(1.03)}to{transform:none}}
+@media (prefers-reduced-motion: reduce){.flash{animation:none}}
+.cam{position:relative;border-radius:10px;overflow:hidden;background:#000;aspect-ratio:4/3;max-width:100%}
+.cam video{width:100%;height:100%;object-fit:cover;display:block}
+.cam .guide{position:absolute;left:8%;right:8%;top:38%;height:24%;border:2px solid rgba(255,255,255,.85);border-radius:6px;box-shadow:0 0 0 999px rgba(0,0,0,.25)}
+.cam .camclose{position:absolute;right:8px;top:8px;min-height:36px;padding:.3em .7em}
+.note{font-size:.85rem;border-radius:8px;padding:8px 10px;background:var(--warn-bg);color:var(--ink);border:1px solid var(--warn)}
+.closed{font-size:.9rem;border-radius:8px;padding:10px 12px;background:var(--info-bg);border:1px solid var(--info)}
+
+.ents{display:flex;flex-direction:column;gap:6px}
+.ent{border:1px solid var(--line);border-radius:8px;background:var(--surface2)}
+.ent>summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;padding:8px 10px}
+.ent>summary::-webkit-details-marker{display:none}
+.ent .en{font:700 .98rem var(--f-mono)}
+.ent .bar{grid-column:1 / -1;height:6px}
+.ent .umps{display:flex;flex-wrap:wrap;gap:6px;padding:0 10px 10px}
+.u{font:600 .8rem var(--f-mono);padding:.2em .5em;border-radius:6px;border:1px solid var(--line);background:var(--surface)}
+.u.ok{background:var(--ok-bg);color:var(--ok);border-color:transparent}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tabs button{border:0;border-bottom:3px solid transparent;border-radius:0;background:none;padding:.5em .6em;color:var(--muted);min-height:40px;white-space:nowrap}
+.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--accent)}
+.tabs .c{font-family:var(--f-mono);font-size:.8rem;background:var(--surface2);border-radius:10px;padding:0 .45em;margin-left:.2em}
+.list{display:flex;flex-direction:column;gap:6px}
+.item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:2px 10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:8px}
+.item .s{width:10px;height:10px;border-radius:50%;grid-row:1 / span 2}
+.item .uu{font:700 .98rem var(--f-mono);overflow-wrap:anywhere}
+.item .m{grid-column:2;font-size:.82rem;color:var(--muted);overflow-wrap:anywhere}
+.item .x{grid-row:1 / span 2;grid-column:3;min-height:34px;padding:.3em .6em;font-size:.8rem}
+.empty{padding:18px;text-align:center;color:var(--muted);font-size:.9rem}
+.confirm{display:flex;flex-direction:column;gap:8px;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:10px}
+.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:8px;font-size:.9rem;max-width:calc(100% - 32px);z-index:20}
+</style>
+<style>
+.sync{display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--muted);flex-wrap:wrap}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--muted);flex:none}
+.dot.on{background:var(--ok)} .dot.off{background:var(--bad)} .dot.wait{background:var(--warn)}
+.link{border:0;background:none;color:var(--accent);padding:0 .2em;min-height:0;font-weight:600;text-decoration:underline;cursor:pointer}
+details.sup>summary{cursor:pointer;font-weight:600;list-style:none}
+details.sup>summary::-webkit-details-marker{display:none}
+details.sup>summary::before{content:"▸ ";color:var(--muted)}
+details.sup[open]>summary::before{content:"▾ "}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:.88rem}
+.chk input{width:20px;height:20px;margin-top:1px;flex:none}
+.big{font-size:1.05rem;min-height:52px}
+.camb{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.camb .uu{font:700 .95rem var(--f-mono);white-space:nowrap}
+.camb .m{grid-column:1 / -1;font-size:.82rem;color:var(--muted)}
+.camb .arrow{font:700 .85rem var(--f-mono);grid-column:2 / -1;min-width:0;overflow-wrap:anywhere}
+.alert{border:2px solid var(--bad);background:var(--bad-bg);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.alert h2{color:var(--bad)}
+details.alert>summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:8px;align-items:center}
+details.alert>summary::-webkit-details-marker{display:none}
+.infob{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+details.infob>summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:8px;align-items:center}
+details.infob>summary::-webkit-details-marker{display:none}
+
+/* pantalla de escaneo */
+.scanTop{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.scanTop .me{font-size:.9rem;min-width:0}
+.dest{border-radius:14px;padding:16px;border:3px solid transparent;display:flex;flex-direction:column;gap:6px;min-height:190px;justify-content:center}
+.dest .lbl{font:700 1rem var(--f-display);text-transform:uppercase;letter-spacing:.08em}
+.dest .flnum{font:700 clamp(2.2rem,11vw,3.4rem) var(--f-mono);line-height:1;letter-spacing:.01em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.dest .code{font:600 .95rem var(--f-mono);opacity:.85}
+.dest .det{font-size:.95rem;color:var(--ink)}
+.d-ok{background:var(--ok-bg);border-color:var(--ok);color:var(--ok)}
+.d-warn{background:var(--warn-bg);border-color:var(--warn);color:var(--warn)}
+.d-bad{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}
+.d-info{background:var(--info-bg);border-color:var(--info);color:var(--info)}
+.d-idle{background:var(--surface);border-color:var(--line);color:var(--muted)}
+.scanBtns{display:grid;grid-template-columns:1fr auto;gap:8px}
+.scanBtns .primary{font-size:1.2rem;min-height:60px}
+.stack{display:flex;flex-direction:column;gap:12px}
+.picks{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;max-height:60vh;overflow:auto}
+.pick{display:flex;flex-direction:column;align-items:stretch;gap:6px;text-align:left;padding:10px 12px;min-height:0;font-weight:400}
+.pick .pn{font:700 1.05rem var(--f-mono)}
+.pick .pc{font-size:.8rem;color:var(--muted);display:flex;justify-content:space-between;gap:6px;align-items:center}
+.pick.done{opacity:.6}
+.curbar{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.curfl{font:700 1.5rem var(--f-mono);overflow-wrap:anywhere}
+.curcnt{font:700 1.5rem var(--f-display);font-variant-numeric:tabular-nums}
+.mine{display:flex;flex-direction:column;gap:4px}
+.homeHd{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.mods{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:1000px){.mods{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:640px){.mods{grid-template-columns:1fr}}
+.mod{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto auto;gap:4px 14px;align-items:center;text-align:left;padding:16px;min-height:0;border-radius:14px;border:1px solid var(--line);background:var(--surface);font-weight:400}
+.mod .num{grid-row:1 / span 3;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font:700 1.3rem var(--f-display);background:var(--mod);color:var(--mod-ink)}
+.mod .mt{font:700 clamp(1rem,1.5vw,1.3rem) var(--f-display);min-width:0;text-transform:uppercase;letter-spacing:.03em;color:var(--ink)}
+.mod .md{font-size:.85rem;color:var(--muted)}
+.mod .ms{font-size:.82rem;font-weight:600}
+.mod.on{border-color:var(--mod);box-shadow:inset 0 4px 0 var(--mod)}
+.mod.off .num{background:var(--surface2);color:var(--muted);border:1px solid var(--line)}
+.modBar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.modTag{font:700 .78rem var(--f-display);text-transform:uppercase;letter-spacing:.1em;background:var(--mod);color:var(--mod-ink);padding:.25em .7em;border-radius:6px}
+.wrap.wide{max-width:1240px}
+.avCard{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 14px;align-items:center;text-align:left;padding:16px;min-height:0;border-radius:14px;background:var(--mod);color:var(--mod-ink);border:0;font-weight:400}
+.avCard .t{font:700 1.45rem var(--f-display);text-transform:uppercase;letter-spacing:.05em}
+.avCard .s{font-size:.88rem;opacity:.92}
+.avCard .go{grid-row:1 / span 2;grid-column:2;font:700 1.6rem var(--f-display)}
+.stages{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+.stages .bk .n{font-size:1.8rem}
+.stages .bk .n small{font-size:.9rem;color:var(--muted);font-weight:600}
+.bk .h .u2{display:block;font:600 .62rem var(--f-body);letter-spacing:.04em;opacity:.8;text-transform:none}
+.stages .bk .s{font-size:.72rem}
+@media (max-width:1100px){.stages{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:480px){.stages{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stg{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.stg .l{font:700 .78rem var(--f-display);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.stg .n{font:700 1.55rem var(--f-display);font-variant-numeric:tabular-nums;line-height:1}
+.stg .n small{font-size:.9rem;color:var(--muted);font-weight:600}
+.stg .bar{height:6px}
+.filt{position:sticky;top:env(safe-area-inset-top,0px);z-index:6;display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;box-shadow:0 6px 16px -12px rgba(0,0,0,.35)}
+.filt .fl-l{font:700 .8rem var(--f-display);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.filt select{font:500 .95rem var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:.45em .6em;min-height:42px;max-width:100%}
+.ms{position:relative}
+.ms>.msb{font:500 .95rem var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:.45em .7em;min-height:42px;display:inline-flex;gap:8px;align-items:center;max-width:100%}
+.ms>.msb::after{content:"▾";color:var(--muted)}
+.ms.on>.msb{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.ms>.msp{position:absolute;top:calc(100% + 4px);left:0;z-index:20;min-width:240px;max-width:min(92vw,420px);max-height:320px;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 30px -12px rgba(0,0,0,.4);padding:6px;display:flex;flex-direction:column;gap:2px}
+.ms .opt{display:flex;gap:8px;align-items:center;padding:7px 8px;border-radius:6px;cursor:pointer;font-size:.9rem}
+.ms .opt:hover{background:var(--surface2)}
+.ms .opt input{width:18px;height:18px;flex:none}
+.ms .msa{display:flex;justify-content:space-between;gap:8px;padding:4px 8px 6px;border-bottom:1px solid var(--line);margin-bottom:4px}
+.st-na{background:var(--surface2);color:var(--muted)}
+.filt select.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.avTools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.avTools select{font:500 .95rem var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:.5em .6em;min-height:44px}
+.tblscroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table.av{border-collapse:collapse;width:100%;min-width:1080px;font-size:.84rem}
+table.av thead th{position:sticky;top:0;background:var(--mod);color:var(--mod-ink);text-align:left;padding:8px 10px;font:700 .8rem var(--f-display);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;z-index:1}
+table.av td{padding:4px 6px;border-top:1px solid var(--line);white-space:nowrap;vertical-align:middle}
+table.av td.flc{font:700 .9rem var(--f-mono);padding-left:10px}
+table.av td.tx{padding-left:10px}
+.pk{display:flex;align-items:center;gap:6px;min-width:110px}
+.pk .bar{flex:1;height:12px;border-radius:3px}
+.pk b{font-family:var(--f-mono);font-size:.82rem;min-width:3.4em;text-align:right}
+.st{display:flex;flex-direction:column;justify-content:center;width:100%;min-height:38px;padding:4px 8px;border-radius:6px;border:0;text-align:left;font:700 .8rem var(--f-body);line-height:1.15}
+.st small{display:block;font-weight:500;font-size:.68rem;opacity:.8}
+button.st{cursor:pointer}
+button.st:hover{filter:brightness(.96)}
+.st-pen{background:var(--warn-bg);color:var(--warn)}
+.st-pro{background:var(--info-bg);color:var(--info)}
+.st-ok{background:var(--ok-bg);color:var(--ok)}
+.st-bad{background:var(--bad-bg);color:var(--bad)}
+.bp{display:flex;flex-direction:column;gap:4px;width:100%;min-width:96px;min-height:42px;padding:6px 8px;border-radius:6px;border:0;text-align:left;font:700 .8rem var(--f-body);cursor:pointer}
+.bp .top{display:flex;justify-content:space-between;gap:6px;align-items:baseline}
+.bp .top span{font-family:var(--f-mono)}
+.bp .mini{height:5px;border-radius:3px;background:rgba(0,0,0,.08);overflow:hidden}
+.bp .mini i{display:block;height:100%;background:currentColor}
+.bp small{font-weight:500;font-size:.68rem;opacity:.85}
+.bp:hover{filter:brightness(.96)}
+.sheet{z-index:30}
+#stageSheet{z-index:29}
+#infoSheet{z-index:28}
+#lockSheet{z-index:40}
+#lockSheet .card{display:flex;flex-direction:column;gap:10px}
+.lockOut{margin-left:auto}
+.fzbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0 8px}
+.fzbar:empty{display:none}
+.fzbar .lb{font:700 .68rem var(--f-body);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-right:2px}
+.fzbar button{all:unset;cursor:pointer;box-sizing:border-box;border:1px solid var(--line);border-radius:20px;padding:5px 11px;font-size:.8rem;background:var(--surface);color:var(--ink,inherit);line-height:1.2}
+.fzbar button small{color:var(--muted);margin-left:4px}
+.fzbar button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.fzbar button.on small{color:rgba(255,255,255,.75)}
+.fzbar button:focus-visible{outline:2px solid var(--mod);outline-offset:2px}
+.sg.kp6{grid-template-columns:repeat(6,minmax(0,1fr))}
+@media (max-width:700px){.sg.kp6{grid-template-columns:repeat(3,minmax(0,1fr))}}
+td.fz{min-width:150px;white-space:normal;line-height:1.25}
+td.fz div+div{margin-top:3px}
+button.lk{all:unset;cursor:pointer;display:block;width:100%;box-sizing:border-box;padding:2px 0;border-bottom:1px dashed transparent}
+button.lk:hover,button.lk:focus-visible{color:var(--mod);border-bottom-color:currentColor}
+td.flc button.lk{font:inherit;letter-spacing:inherit}
+.chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:6px 0 10px}
+@media (min-width:560px){.chips{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (min-width:1000px){.chips{grid-template-columns:repeat(8,minmax(0,1fr))}}
+.chips .chip{all:unset;box-sizing:border-box;cursor:pointer;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--surface);display:flex;flex-direction:column;gap:4px}
+.chips .chip.nc{cursor:default}
+.chips .chip:not(.nc):hover{border-color:var(--mod)}
+.chips .chip .h{font:700 .66rem var(--f-body);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.chips .chip .v{font-weight:700;font-size:.92rem}
+#infoSheet .card{max-width:980px}
+table.items tr.clk{cursor:pointer}
+table.items tr.clk:hover td{background:var(--surface2)}
+.sg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:480px){.sg{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.sg .kpi{padding:8px 10px}
+.sg .kpi .n{font-size:1.4rem}
+.egrp{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.egrp .eh{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 10px;background:var(--surface2);font-size:.88rem}
+.egrp .eh b{font-family:var(--f-mono)}
+.urow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:2px 10px;align-items:center;padding:7px 10px;border-top:1px solid var(--line);font-size:.85rem}
+.urow .uc{font:700 .9rem var(--f-mono);cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
+.urow .who{grid-column:2 / -1;font-size:.76rem;color:var(--muted)}
+.urow .dot{width:10px;height:10px}
+.secT{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:6px}
+.secT h2{font-size:1.05rem}
+.bdk{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+@media (max-width:900px){.bdk{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:520px){.bdk{grid-template-columns:repeat(2,minmax(0,1fr))}}
+button.bk{cursor:pointer;padding:0;font:inherit;text-align:inherit;min-height:0;color:inherit;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:0}
+button.bk:hover{box-shadow:0 4px 14px -8px rgba(0,0,0,.35)}
+.bk{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface);display:flex;flex-direction:column;min-width:0}
+.bk .h{background:var(--navy);color:var(--navy-ink);font:700 .78rem var(--f-display);text-transform:uppercase;letter-spacing:.07em;text-align:center;padding:7px 6px}
+.bk .n{font:700 2.1rem var(--f-display);text-align:center;padding:10px 6px 8px;color:var(--navy);font-variant-numeric:tabular-nums}
+.bk .n.red{color:var(--bad)}
+.bk .s{font-size:.78rem;font-weight:700;text-align:center;padding:6px;line-height:1.25}
+.bk .s.ok{background:var(--grn-hi);color:#08210c} .bk .s.pen{background:var(--warn-bg);color:var(--warn)} .bk .s.neu{background:var(--surface2);color:var(--muted)}
+.bk .p{font-size:.75rem;text-align:center;padding:5px;background:var(--ok-bg);color:var(--ok);font-weight:600}
+.bk .p.blue{background:var(--info-bg);color:var(--info)} .bk .p.pen{background:var(--warn-bg);color:var(--warn)}
+table.fz{border-collapse:collapse;width:100%;min-width:900px;font-size:.85rem}
+table.fz thead th{background:var(--grn);color:var(--grn-ink);padding:7px 10px;font:700 .78rem var(--f-display);text-transform:uppercase;letter-spacing:.05em;text-align:center;white-space:nowrap}
+table.fz thead th.l{text-align:left}
+table.fz td{padding:6px 10px;border-top:1px solid var(--line);text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}
+table.fz td.l{text-align:left}
+table.fz td.av{font-weight:700}
+table.fz td.av.pen{color:var(--warn)}
+table.fz td.neg{color:var(--bad);font-weight:700}
+table.fz tbody tr{cursor:pointer}
+table.fz tbody tr:hover td{background:var(--surface2)}
+table.fz tfoot tr{cursor:pointer}
+table.fz tfoot td{background:var(--grn);color:var(--grn-ink);font-weight:700;border-top:0}
+table.fz tfoot td.neg{color:var(--grn-ink)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.8rem;color:var(--muted);align-items:center}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:4px}
+.sitName{display:flex;flex-direction:column;gap:6px;padding:12px;border:1px solid var(--warn);background:var(--warn-bg);border-radius:12px}
+.sitName label{font-weight:700;font-size:.85rem;color:var(--warn)}
+.sitTools{display:grid;grid-template-columns:1fr auto;gap:8px}
+.sitList{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.sit{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.sit.s-emb{box-shadow:inset 4px 0 0 var(--info)} .sit.s-mue{box-shadow:inset 4px 0 0 var(--ok)} .sit.s-pen{box-shadow:inset 4px 0 0 var(--warn)}
+.sit .top1{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.sit .sfl{font:700 1.15rem var(--f-mono,monospace);letter-spacing:.02em}
+.sit .meta{font-size:.8rem;color:var(--muted)}
+.sit .now{font-size:.82rem}
+.sit .opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sit .opts button{min-height:52px;font-weight:700;border-radius:10px}
+.sit .opts button.on.e{background:var(--info);border-color:var(--info);color:#fff}
+.sit .opts button.on.m{background:var(--ok);border-color:var(--ok);color:#fff}
+.soon{display:flex;flex-direction:column;gap:10px;align-items:flex-start;padding:22px;border:2px dashed var(--line);border-radius:14px;background:var(--surface)}
+.sheet{position:fixed;inset:0;background:rgba(10,14,16,.5);z-index:30;display:flex;align-items:flex-end;justify-content:center}
+.sheet .card{background:var(--surface);color:var(--ink);width:100%;max-width:680px;max-height:86vh;overflow:auto;border-radius:16px 16px 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:10px}
+.sheet .hd{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.sheet .ump{font:700 1.5rem var(--f-mono)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:.88rem}
+.kv dt{color:var(--muted)} .kv dd{margin:0;font-weight:600;overflow-wrap:anywhere}
+.tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table.items{width:100%;border-collapse:collapse;font-size:.85rem}
+table.items th{text-align:left;font-weight:600;color:var(--muted);background:var(--surface2);padding:6px 8px;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em}
+table.items td{padding:7px 8px;border-top:1px solid var(--line);vertical-align:top}
+table.items td.n{text-align:right;font-family:var(--f-mono);white-space:nowrap}
+table.items td.c{font-family:var(--f-mono);white-space:nowrap}
+button.u{min-height:0;padding:.25em .55em;font:600 .8rem var(--f-mono);border-radius:6px}
+.uu.tap{cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
+.found{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border:2px solid var(--accent);border-radius:10px;padding:10px 12px;background:var(--info-bg)}
+.mine .r{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;font-size:.85rem;padding:6px 8px;border-radius:6px;background:var(--surface2)}
+.mine .r .c{font:600 .85rem var(--f-mono)}
+.mine .r .f{font:700 .85rem var(--f-mono)}
+</style>
+
+<!-- ===== Nombre ===== -->
+<div class="wrap" id="vNombre" hidden>
+  <header><h1>Despacho por Flete</h1><div class="src">Cuenta Tai Loy · lectura de bultos</div></header>
+  <section class="panel">
+    <h2>¿Quién eres?</h2>
+    <div class="small muted">Tu nombre queda registrado en cada bulto que leas. Se pide una sola vez en este celular.</div>
+    <input id="inNombre" type="text" placeholder="Nombre y apellido" autocomplete="name">
+    <button id="btnNombre" class="primary big" type="button">Empezar</button>
+  </section>
+</div>
+
+<!-- ===== Inicio: módulos ===== -->
+<div class="wrap" id="vHome" hidden>
+  <header class="homeHd">
+    <div><h1>Despacho Tai Loy</h1><div class="src">Hola, <b id="homeName">—</b> <button class="link" id="btnOp2" type="button">cambiar</button> · elige qué vas a hacer</div></div>
+    <div class="sync" id="syncBar3"><span class="dot" id="syncDot3"></span><span id="syncTxt3"></span></div>
+  </header>
+  <button class="avCard" id="btnAvance" type="button"><span class="t">Avance general 🔒</span><span class="go">›</span><span class="s" id="avHomeStat">Pickeado · Auditado · Embalado · Contabilizado · Anclado · Fijado · En sitio</span></button>
+  <div class="mods">
+    <button class="mod off" data-mod="auditado" type="button"><span class="num">1</span><span class="mt">Auditado</span><span class="md">Control de auditoría</span><span class="ms muted">En preparación</span></button>
+    <button class="mod off" data-mod="embalado" type="button"><span class="num">2</span><span class="mt">Embalado</span><span class="md">Control de embalado</span><span class="ms muted">En preparación</span></button>
+    <button class="mod on" data-mod="contabilizado" type="button"><span class="num">3</span><span class="mt">Contabilizado</span><span class="md">Cuadre de bultos por transporte</span><span class="ms" id="homeStat">—</span></button>
+    <button class="mod on" data-mod="sitio" type="button"><span class="num">4</span><span class="mt">En sitio</span><span class="md">¿El transporte está en embalaje o en muelle?</span><span class="ms" id="sitStat">—</span></button>
+  </div>
+</div>
+
+<!-- ===== Avance general ===== -->
+<div class="wrap wide" id="vAvance" hidden>
+  <div class="modBar"><button class="back" id="btnAvHome" type="button">‹ Inicio</button><span class="modTag">Avance general</span><button class="link lockOut" id="btnLockAv" type="button">Salir de coordinadora</button></div>
+  <header class="top">
+    <div><h1>Avance general del despacho</h1><div class="src" id="avSrc">—</div><div class="note" id="avWarn" hidden></div></div>
+    <button id="btnAvExport" type="button">Exportar a Excel</button>
+  </header>
+  <div class="filt" role="group" aria-label="Filtros">
+    <span class="fl-l">Filtros</span>
+    <div class="ms" id="avBloque" data-label="Bloque"></div>
+    <div class="ms" id="avCanal" data-label="Canal"></div>
+    <div class="ms" id="avFase" data-label="Fase"></div>
+    <button type="button" id="avClear" class="link">Quitar filtros</button>
+    <span class="small muted" id="avFilTxt"></span>
+  </div>
+  <div class="secT"><h2>Status de picking</h2><span class="small muted">Según hoja BD · tareas en C o A cuentan como completas · A = negada · toca cualquier tarjeta o fila para ver el detalle</span></div>
+  <section class="bdk" id="bdKpis" aria-label="Resumen de picking"></section>
+  <div class="tblscroll">
+    <table class="fz">
+      <thead><tr><th class="l">Bloque</th><th class="l">Canal</th><th class="l">Fase</th><th class="l">Descripción Fase</th><th>% Avance</th><th>OA compl.</th><th>Tareas compl.</th><th>Negados (tasa)</th><th>FO compl.</th><th>Docs compl.</th></tr></thead>
+      <tbody id="bdFase"></tbody>
+      <tfoot id="bdTot"></tfoot>
+    </table>
+  </div>
+  <div class="secT"><h2>Etapas por transporte</h2><span class="small muted">Toca una tarjeta para ver el detalle</span></div>
+  <section class="stages" id="avStages" aria-label="Transportes completos por etapa"></section>
+  <div class="avTools">
+    <input id="avQ" type="search" placeholder="Buscar transporte" style="flex:1 1 180px;width:auto">
+    <select id="avFiltro" aria-label="Estado"><option value="">Todos</option><option value="pend">Con etapas pendientes</option><option value="done">Completos</option></select>
+  </div>
+  <div class="legend"><span><i style="background:var(--warn-bg);border:1px solid var(--warn)"></i>Pendiente</span><span><i style="background:var(--info-bg);border:1px solid var(--info)"></i>En proceso</span><span><i style="background:var(--ok-bg);border:1px solid var(--ok)"></i>Completo</span><span>Toca cualquier celda (bloque, canal, transporte o etapa) para ver su detalle.</span></div>
+  <div class="tblscroll">
+    <table class="av">
+      <thead><tr><th>Bloque</th><th>Canal</th><th>Documento Flete</th><th>Muelle</th><th>Pickeado</th><th>Auditado</th><th>Embalado</th><th>Contabilizado</th><th>Anclado</th><th>Fijado</th><th>En sitio</th></tr></thead>
+      <tbody id="avBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ===== Módulo aún sin definir ===== -->
+<div class="wrap" id="vMod" hidden>
+  <div class="modBar"><button class="back" id="btnModHome" type="button">‹ Inicio</button><span class="modTag" id="modTag">—</span></div>
+  <div class="soon"><h1 id="modTitle">—</h1><div class="muted">Este módulo está listo para configurarse. Todavía no tiene pasos definidos.</div></div>
+</div>
+
+<!-- ===== Operario: en sitio ===== -->
+<div class="wrap" id="vSitio" hidden>
+  <div class="modBar"><button class="back" id="btnSitHome" type="button">‹ Inicio</button><span class="modTag">En sitio</span></div>
+  <header class="top"><div><h1>En sitio</h1><div class="src">Marca dónde está cada transporte. Queda registrado con tu nombre y la hora.</div></div></header>
+  <div class="sitName" id="sitNameBox" hidden><label for="sitName">Tu nombre</label><input id="sitName" type="text" autocomplete="name" placeholder="Escribe tu nombre"></div>
+  <div class="sitTools"><input id="sitQ" type="search" placeholder="Buscar transporte" autocomplete="off" inputmode="numeric"><select id="sitF" aria-label="Filtrar por estado"><option value="">Todos</option><option value="Pendiente">Pendientes</option><option value="En embalaje">En embalaje</option><option value="En muelle">En muelle</option></select></div>
+  <div class="small muted" id="sitSum"></div>
+  <div class="sitList" id="sitList"></div>
+</div>
+
+<!-- ===== Operario: escanear ===== -->
+<div class="wrap" id="vScan" hidden>
+  <div class="modBar"><button class="back" id="btnHome" type="button">‹ Inicio</button><span class="modTag">Contabilizado</span></div>
+  <div class="scanTop">
+    <div class="me"><b id="opName">—</b> <button class="link" id="btnOp" type="button">cambiar</button><div class="sync" id="syncBar"><span class="dot" id="syncDot"></span><span id="syncTxt"></span></div></div>
+    <button id="btnSup" type="button">Coordinadora 🔒</button>
+  </div>
+  <div class="note" id="noBd" hidden>Aún no hay reporte del turno. Avisa a la coordinadora.</div>
+  <section class="panel" id="pickBox">
+    <h2>¿Qué transporte vas a cuadrar?</h2>
+    <input id="pickQ" type="search" inputmode="numeric" autocomplete="off" placeholder="Últimos números del transporte">
+    <div class="picks" id="pickList"></div>
+  </section>
+  <div class="stack" id="workBox" hidden>
+    <div class="curbar">
+      <div style="min-width:0"><div class="small muted">Transporte</div><div class="curfl" id="curFl">—</div></div>
+      <div class="curcnt" id="curCnt">0/0</div>
+      <button id="btnChange" type="button">Cambiar</button>
+    </div>
+    <div class="bar" aria-hidden="true"><i id="curBar" style="width:0"></i></div>
+    <div id="dest" class="dest d-idle"></div>
+    <div id="camBox" hidden><div class="cam"><video id="video" playsinline muted></video><div class="guide"></div><button id="btnCamOff" class="camclose" type="button">Cerrar</button></div></div>
+    <div id="camNote" class="note" hidden></div>
+    <div class="scanBtns">
+      <button id="btnCam" class="primary" type="button">Escanear</button>
+      <label class="btn" for="photoIn" style="min-height:60px">Foto<input id="photoIn" type="file" accept="image/*" capture="environment" hidden></label>
+    </div>
+    <input id="code" type="text" inputmode="numeric" autocomplete="off" placeholder="Pistola RF: lee aquí la UMp" aria-label="Código de barras">
+    <section class="panel">
+      <div class="row" style="justify-content:space-between"><h2>Mis lecturas en este transporte</h2><span class="mono" id="mineN">0</span></div>
+      <div class="mine" id="mine"></div>
+    </section>
+  </div>
+</div>
+
+<!-- ===== Coordinadora: fletes ===== -->
+<div class="wrap" id="vFletes" hidden>
+  <header class="top">
+    <div>
+      <div class="row" style="gap:10px"><button class="back" id="btnToScan" type="button">‹ Escanear</button><h1>Avance de despacho</h1><button class="link lockOut" id="btnLockFl" type="button">Salir de coordinadora</button></div>
+      <div class="src">Reporte: <span id="srcName" class="mono">—</span> · <span id="srcInfo"></span></div>
+      <div class="sync" id="syncBar2"><span class="dot" id="syncDot2"></span><span id="syncTxt2"></span><button class="link" id="btnSync" type="button">Actualizar</button></div>
+    </div>
+    <label class="btn" for="fileIn" id="localLoad" hidden>Cargar reporte (hoja BD)<input id="fileIn" type="file" accept=".xlsx,.xlsm,.xls" hidden></label>
+  </header>
+
+  <details class="alert" id="moverBanner" hidden open>
+    <summary><h2>Bultos por mover</h2><span class="small" id="moverCount"></span></summary>
+    <div class="small">Se leyeron cuando iban en un flete y SAP los pasó a otro. Hay que sacarlos de ese camión y llevarlos al flete nuevo. Al volver a escanearlos, la app los da por resueltos.</div>
+    <div class="list" id="moverAll"></div>
+  </details>
+
+  <section class="sum" aria-label="Resumen del turno">
+    <div class="kpi"><div class="n" id="sFl">0</div><div class="l">Fletes</div></div>
+    <div class="kpi ok"><div class="n" id="sCer">0</div><div class="l">Cerrados</div></div>
+    <div class="kpi warn"><div class="n" id="sCar">0</div><div class="l">En carga</div></div>
+    <div class="kpi"><div class="n" id="sBul">0</div><div class="l">Bultos leídos</div></div>
+  </section>
+  <div class="row">
+    <input id="flQ" type="search" placeholder="Buscar flete, entrega o UMp" style="flex:1 1 200px;width:auto">
+    <div class="seg" role="group" aria-label="Filtro">
+      <button type="button" data-f="pend" aria-pressed="true">Pendientes</button>
+      <button type="button" data-f="todos" aria-pressed="false">Todos</button>
+      <button type="button" data-f="cer" aria-pressed="false">Cerrados</button>
+    </div>
+  </div>
+  <div class="fletes" id="flList"></div>
+
+  <details class="infob" id="cambBanner" hidden>
+    <summary><h2>Cambios de transporte</h2><span class="small muted" id="cambCount"></span></summary>
+    <div class="small muted">Bultos que SAP pasó a otro flete durante el turno. La etiqueta impresa muestra el FO anterior; la app ya los dirige al flete nuevo.</div>
+    <div class="list" id="cambAll"></div>
+  </details>
+
+  <div class="row">
+    <button id="btnExportAll" type="button">Exportar turno a Excel</button>
+    <button id="btnResetAll" class="danger" type="button" hidden>Borrar lecturas del turno</button>
+  </div>
+  <div id="resetAllBox" class="confirm" hidden>
+    <div>Se borran las lecturas y cierres de todos los fletes en este celular.</div>
+    <div class="row"><button id="resetAllYes" class="danger" type="button">Sí, borrar todo</button><button id="resetAllNo" type="button">Cancelar</button></div>
+  </div>
+
+  <details class="panel sup" id="supPanel" hidden>
+    <summary>Publicar reporte del turno</summary>
+    <div class="small muted">Carga el REPORTE (se usa la hoja BD). Al publicarlo, todos los celulares lo reciben en segundos. Vuelve a publicarlo cada vez que lo descargues de SAP: la app detecta los cambios de transporte y redirige los bultos.</div>
+    <label class="btn" for="supFile">1. Elegir REPORTE<input id="supFile" type="file" accept=".xlsx,.xlsm,.xls" hidden></label>
+    <div id="supInfo" class="small"></div>
+    <input id="supClave" type="text" placeholder="2. Clave de coordinadora" autocomplete="off">
+    <label class="chk"><input id="supNuevo" type="checkbox"> <span><b>Empezar turno nuevo.</b> Los fletes arrancan en cero. Lo leído antes queda guardado en la hoja de Google.</span></label>
+    <button id="supPub" class="primary" type="button" disabled>3. Publicar para todos</button>
+  </details>
+</div>
+
+<!-- ===== Coordinadora: detalle de flete ===== -->
+<div class="wrap" id="vFlete" hidden>
+  <header class="top">
+    <div class="row" style="gap:10px">
+      <button class="back" id="btnBack" type="button">‹ Fletes</button>
+      <div style="min-width:0"><div class="small muted">Flete</div><h1 class="mono" id="fTitle" style="font-family:var(--f-mono);font-size:1.5rem">—</h1></div>
+    </div>
+    <span id="fState" class="pill p-mute">Pendiente</span>
+  </header>
+  <section class="sum" aria-label="Avance del flete">
+    <div class="kpi"><div class="n" id="kEsp">0</div><div class="l">Bultos SAP</div></div>
+    <div class="kpi ok"><div class="n" id="kLei">0</div><div class="l">Cargados</div></div>
+    <div class="kpi warn"><div class="n" id="kFal">0</div><div class="l">Faltan</div></div>
+    <div class="kpi bad"><div class="n" id="kMov">0</div><div class="l">Por sacar</div></div>
+  </section>
+  <div class="bar" aria-hidden="true"><i id="pBar" style="width:0"></i></div>
+  <section class="alert" id="movPanel" hidden>
+    <h2>Movimientos pendientes</h2>
+    <div class="list" id="movList"></div>
+  </section>
+  <section class="panel">
+    <div class="row" style="justify-content:space-between"><h2>Entregas</h2><span class="small muted" id="entSum"></span></div>
+    <div class="ents" id="entList"></div>
+  </section>
+  <section class="panel">
+    <div class="tabs" role="tablist">
+      <button role="tab" id="t-fal" aria-selected="true">Faltan<span class="c" id="cFal">0</span></button>
+      <button role="tab" id="t-lei" aria-selected="false">Contados<span class="c" id="cLei">0</span></button>
+      <button role="tab" id="t-inc" aria-selected="false">Incidencias<span class="c" id="cInc">0</span></button>
+    </div>
+    <div class="list" id="list"></div>
+  </section>
+  <section class="panel">
+    <h2>Cierre del flete</h2>
+    <div id="closedBox" class="closed" hidden></div>
+    <div id="closeForm" class="confirm">
+      <input id="resp" type="text" placeholder="Responsable del cierre" autocomplete="name">
+      <input id="obs" type="text" placeholder="Observación (obligatoria si cierras con faltantes)" hidden>
+      <div class="row">
+        <button id="btnClose" class="okb" type="button">Cerrar flete</button>
+        <button id="btnCloseDes" class="danger" type="button">Cerrar con faltantes</button>
+      </div>
+      <div class="small muted" id="closeHint"></div>
+    </div>
+    <div class="row">
+      <button id="btnExport" type="button">Exportar flete a Excel</button>
+      <button id="btnReopen" type="button" hidden>Reabrir flete</button>
+    </div>
+  </section>
+</div>
+<div class="sheet" id="infoSheet" hidden><div class="card" role="dialog" aria-modal="true" aria-labelledby="ifTitle"><div class="hd"><div><div class="small muted" id="ifSub">—</div><div class="ump" id="ifTitle" style="font-family:var(--f-display);text-transform:uppercase;letter-spacing:.04em">—</div></div><button id="ifClose" type="button">Cerrar</button></div><div id="ifHead"></div><div class="fzbar" id="ifFz"></div><input id="ifQ" type="search" placeholder="Filtrar" autocomplete="off"><div class="tblwrap"><table class="items" id="ifTable"></table></div><div class="small muted" id="ifFoot"></div></div></div>
+<div class="sheet" id="stageSheet" hidden><div class="card" role="dialog" aria-modal="true" aria-labelledby="sgTitle"><div class="hd"><div><div class="small muted" id="sgSub">—</div><div class="ump" id="sgTitle">—</div></div><button id="sgClose" type="button">Cerrar</button></div><div id="sgBody" class="stack"></div></div></div>
+<div class="sheet" id="lockSheet" hidden><div class="card" role="dialog" aria-modal="true" aria-labelledby="lkTitle" style="max-width:420px"><div class="hd"><div><div class="small muted">Solo coordinadora</div><div class="ump" id="lkTitle" style="font-family:var(--f-display);font-size:1.25rem;text-transform:uppercase;letter-spacing:.04em">Clave de coordinadora</div></div><button id="lkClose" type="button">Cancelar</button></div>
+  <div class="small" id="lkMsg">Escribe tu clave para entrar.</div>
+  <input id="lkPw" type="password" autocomplete="current-password" placeholder="Clave">
+  <input id="lkPw2" type="password" autocomplete="new-password" placeholder="Repite la clave" hidden>
+  <div class="small" id="lkErr" style="color:var(--bad)" hidden></div>
+  <button id="lkGo" class="primary" type="button">Entrar</button></div></div>
+<div class="sheet" id="umpSheet" hidden><div class="card" role="dialog" aria-modal="true" aria-labelledby="shUmp"><div class="hd"><div><div class="small muted">Contenido de la UMp</div><div class="ump" id="shUmp">—</div></div><button id="shClose" type="button">Cerrar</button></div><div id="shBody"></div></div></div>
+<div id="toast" class="toast" hidden></div>
+
+<script src="config.js" onerror="void 0"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
+<script>
+const SEED = /*SEED*/null;
+const CFG = (window.APP_CONFIG && window.APP_CONFIG.url) ? window.APP_CONFIG : null;
+const C = {status:'Status de tarea de almacén', prod:'Producto', desc:'Descripción producto', qty:'Ctd.prev.proced.UMB', um:'Unidad de medida base', oa:'Orden de almacén', conf:'Confirmado por', ump:'UMp destino', ubi:'Ubic.dest.original', fase:'Fase', doc:'Documento', fdesc:'Descripción Fase', flete:'Documento Flete', canal:'Canal', bloque:'Bloque', zona:'Zona', muelle:'Muelle'};
+const KCOLS = Object.values(C);
+const LS = CFG ? 'despacho_flete_nube_v2' : 'despacho_flete_local_v3';
+const $ = id => document.getElementById(id);
+const norm = v => { let s=String(v??'').toUpperCase().replace(/[^0-9A-Z]/g,''); if(/^\d+$/.test(s)) s=s.replace(/^0+/,'')||'0'; return s; };
+const esc = s => String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const hhmm = t => new Date(+t).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+const fechaHora = t => new Date(+t).toLocaleString('es-PE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const nomFl = id => !id ? 'fuera del reporte' : (id==='SINFLETE' ? '(sin flete)' : id);
+
+/* =========================================================
+   ESTADO
+   Cada lectura guarda la UMp y el flete al que iba EN ESE MOMENTO.
+   El flete actual de cada UMp sale siempre del último reporte publicado.
+   Si no coinciden, el bulto está "por mover".
+   ========================================================= */
+let ST = { bd:null, events:[], outbox:[], hasta:0, operario:'', disp:'', resp:'', selFl:'' };
+let EST={}, M=null, SC=new Map(), CIE={}, ALL=[], CUR=null, tab='fal', filtro='pend', flQ='';
+let SYNC = {ok:null, last:0, err:'', busy:false};
+let LAST=null;      // última lectura de este celular (para la tarjeta grande)
+
+function save(){ try{ localStorage.setItem(LS, JSON.stringify(ST)); }catch(e){} }
+function load(){
+  try{ const o=JSON.parse(localStorage.getItem(LS)||'null'); if(o) ST=Object.assign(ST,o); }catch(e){}
+  if(!ST.disp) ST.disp='cel-'+Math.random().toString(36).slice(2,7);
+  if(!CFG){
+    if(!ST.bd && SEED) ST.bd={version:'seed', turno:'local', name:SEED.name, fecha:SEED.fecha, rows:SEED.rows, cambios:[]};
+    if(ST.bd && SEED && ST.bd.version==='seed' && ST.bd.name!==SEED.name){ ST.bd={version:'seed', turno:'local', name:SEED.name, fecha:SEED.fecha, rows:SEED.rows, cambios:[]}; ST.events=[]; }
+  }
+  if(ST.bd) fixBd(ST.bd);
+  // si la copia guardada es de una versión anterior (sin Muelle/Zona) y el link trae la data del mismo día, usar la del link
+  if(!CFG && SEED && ST.bd && ST.bd.version!=='seed' && (ST.bd.faltan||[]).length && (!ST.bd.fecha || ST.bd.fecha===SEED.fecha)){
+    ST.bd=fixBd({version:'seed', turno:ST.bd.turno||'local', name:SEED.name, fecha:SEED.fecha, rows:SEED.rows, cambios:ST.bd.cambios||[]}, KCOLS); ST.bd.faltan=[]; save();
+  }
+}
+const TURNO = () => ST.bd ? ST.bd.turno : '';
+const OLD_COLS = ['Status de tarea de almacén','Producto','Descripción producto','Ctd.prev.proced.UMB','Unidad de medida base','Orden de almacén','Confirmado por','UMp destino','Ubic.dest.original','Fase','Documento','Descripción Fase','Documento Flete','Canal','Bloque'];
+function fixBd(bd, cols){
+  if(!bd || !bd.rows) return bd;
+  const src = cols || bd.cols || (bd.rows[0] && bd.rows[0].length===KCOLS.length ? KCOLS : OLD_COLS);
+  const same = src.length===KCOLS.length && src.every((c,i)=>c===KCOLS[i]);
+  if(!same){
+    const ix=KCOLS.map(n=>src.indexOf(n));
+    bd.rows = bd.rows.map(r=>ix.map(i=> i<0 ? '' : (r[i]??'')));
+    bd.faltan = KCOLS.filter((n,i)=>ix[i]<0 && n===C.muelle).map(n=>n);
+    const iZ=KCOLS.indexOf(C.zona), iU=KCOLS.indexOf(C.ubi), iD=KCOLS.indexOf(C.doc);
+    if(ix[iZ]<0) bd.rows.forEach(r=>{ if(r[iD]) r[iZ] = /^AND/i.test(r[iU]||'') ? 'En muelle' : (r[iU]?'En embalaje':''); });
+  }
+  bd.cols = KCOLS.slice();
+  return bd;
+}
+
+/* ---------- modelo desde la hoja BD ---------- */
+function build(rows, cambios){
+  const ix={}; KCOLS.forEach((n,i)=>{ for(const k in C) if(C[k]===n) ix[k]=i; });
+  const g=(r,k)=>String(r[ix[k]]??'').trim();
+  const fletes=new Map(), bultos=new Map(), entregas=new Map(), known=new Set();
+  for (const r of rows||[]){
+    if (/^\(/.test(g(r,'status'))) continue;
+    const u=norm(g(r,'ump')); if(u) known.add(u);
+    const d=norm(g(r,'doc')); if(!d) continue;
+    const fl=norm(g(r,'flete')) || 'SINFLETE';
+    if(!fletes.has(fl)) fletes.set(fl,{id:fl, ents:[], bultos:[], abiertas:0, sinUmp:0, bloque:'', canal:'', tareas:0, tareasOk:0, tf:{}});
+    const F=fletes.get(fl);
+    if(!entregas.has(d)){ entregas.set(d,{id:d, flete:fl, bultos:[], sinUmp:0}); F.ents.push(d); }
+    const E=entregas.get(d);
+    const st=g(r,'status'); const open = st!=='C' && st!=='A';
+    if(open) F.abiertas++;
+    F.tareas++; if(!open) F.tareasOk++;
+    { const fz=g(r,'fase')||'—'; const o=F.tf[fz]=F.tf[fz]||{n:0,ok:0}; o.n++; if(!open) o.ok++; } if(!F.bloque) F.bloque=g(r,'bloque'); if(!F.canal) F.canal=g(r,'canal'); { const mu=g(r,'muelle'); if(mu){ F.mues=F.mues||new Set(); F.mues.add(mu); F.muelle=[...F.mues].join(' / '); } }
+    if(!u){ E.sinUmp++; F.sinUmp++; continue; }
+    let b=bultos.get(u);
+    if(!b){ b={ump:u, entrega:d, flete:fl, oas:new Set(), lineas:0, unid:0, prods:[], fase:g(r,'fdesc'), abierta:false}; bultos.set(u,b); E.bultos.push(u); F.bultos.push(u); }
+    if(!b.ubi) b.ubi=g(r,'ubi');
+    if(!b.zona) b.zona=g(r,'zona');
+    if(!b.faseCod) b.faseCod=g(r,'fase')||'—';
+    b.oas.add(g(r,'oa')); b.lineas++; b.unid+=parseFloat(g(r,'qty'))||0;
+    if(!b.items) b.items=[];
+    { const p=g(r,'prod'), oa=g(r,'oa'), q=parseFloat(g(r,'qty'))||0; const it=b.items.find(x=>x.p===p && x.oa===oa);
+      if(it) it.q+=q; else b.items.push({p, d:g(r,'desc'), q, um:g(r,'um'), oa, st:g(r,'status')}); }
+    if(b.prods.length<2 && g(r,'desc')) b.prods.push(g(r,'desc'));
+    if(open) b.abierta=true;
+  }
+  const cambio=new Map();
+  for(const c of cambios||[]){ if(!c.ruta) c.ruta=[c.de,c.a]; cambio.set(c.ump,c); }
+  return {fletes, bultos, entregas, known, cambio};
+}
+function diffBd(oldRows, newRows){
+  const mo=build(oldRows), mn=build(newRows), t=Date.now(), out=[];
+  for(const [u,b] of mn.bultos){ const o=mo.bultos.get(u); if(o && o.flete!==b.flete) out.push({ump:u, entrega:b.entrega, de:o.flete, a:b.flete, t}); }
+  for(const [u,o] of mo.bultos){ if(!mn.bultos.has(u)) out.push({ump:u, entrega:o.entrega, de:o.flete, a:'', t}); }
+  return out;
+}
+function mergeCambios(prev, nuevos){
+  const m=new Map((prev||[]).map(c=>[c.ump, Object.assign({}, c, {ruta:(c.ruta||[c.de,c.a]).slice()})]));
+  for(const n of nuevos){
+    const p=m.get(n.ump);
+    if(p){ p.ruta.push(n.a); p.a=n.a; p.t=n.t; if(n.entrega) p.entrega=n.entrega; if(p.a===p.de) m.delete(n.ump); }
+    else m.set(n.ump, {ump:n.ump, entrega:n.entrega, de:n.de, a:n.a, t:n.t, ruta:[n.de, n.a]});
+  }
+  return [...m.values()];
+}
+const fleteActual = u => { const b=M.bultos.get(u); return b ? b.flete : ''; };
+
+/* ---------- juntar eventos de todos los celulares ---------- */
+function allEvents(){
+  const m=new Map(); for(const e of ST.events) m.set(e.id,e); for(const e of ST.outbox) m.set(e.id,e);
+  const t=TURNO();
+  return [...m.values()].filter(e=>String(e.turno)===String(t)).sort((a,b)=>(+a.ts)-(+b.ts) || (a.id<b.id?-1:1));
+}
+function refold(){
+  const scans=[], del=new Set(); CIE={}; EST={};
+  for(const e of allEvents()){
+    if(e.tipo==='scan') scans.push({id:e.id, code:e.codigo, fl:e.flete||'', t:+e.ts, via:e.via, op:e.operario, disp:e.dispositivo, res:e.resultado, ok:/^OK/.test(e.resultado||'')});
+    else if(e.tipo==='del') del.add(e.ref);
+    else if(e.tipo==='cierre'){ let x={}; try{ x=JSON.parse(e.obs||'{}'); }catch(_){} CIE[e.flete]={t:+e.ts, resp:x.resp||e.operario, obs:x.obs||'', completo:!!x.completo, leidos:x.leidos, total:x.total}; }
+    else if(e.tipo==='reabrir') delete CIE[e.flete];
+    else if(e.tipo==='estado'){ (EST[e.flete]=EST[e.flete]||{})[e.codigo]={v:e.resultado, op:e.operario, t:+e.ts}; }
+  }
+  ALL=scans.filter(s=>!del.has(s.id));
+  // por cada UMp: la primera lectura del flete donde se leyó por última vez
+  SC=new Map();
+  for(const s of ALL){ if(!s.fl || !s.ok) continue; const p=SC.get(s.code); if(!p || p.fl!==s.fl) SC.set(s.code, s); }
+}
+function emit(tipo, flete, extra){
+  const e=Object.assign({id:uid(), ts:Date.now(), turno:TURNO(), tipo, flete, entrega:'', codigo:'', resultado:'', ref:'', via:'', operario:ST.operario||'', dispositivo:ST.disp, obs:''}, extra||{});
+  e.hora=new Date(e.ts).toLocaleString('es-PE');
+  if(CFG) ST.outbox.push(e); else ST.events.push(e);
+  save(); refold(); if(CFG) pushSoon(300);
+  return e;
+}
+
+/* ---------- avance por flete ---------- */
+function evalFlete(id){
+  const F=M.fletes.get(id) || {id, ents:[], bultos:[], sinUmp:0, abiertas:0};
+  const leidos=new Map(), faltan=[], traer=[];
+  for(const u of F.bultos){ const s=SC.get(u); if(s && s.fl===id) leidos.set(u,s); else { faltan.push(u); if(s) traer.push({u, s}); } }
+  const sacar=[]; for(const [u,s] of SC){ if(s.fl===id && fleteActual(u)!==id) sacar.push({u, s, a:fleteActual(u)}); }
+  return {F, leidos, faltan, traer, sacar, cierre:CIE[id]||null};
+}
+function estadoFlete(id){
+  const E=evalFlete(id);
+  if (E.cierre) return E.cierre.completo ? ['cer','Cerrado','p-info'] : ['des','Cerrado c/ faltantes','p-bad'];
+  if (!E.leidos.size && !E.sacar.length) return ['pen','Pendiente','p-mute'];
+  return E.faltan.length || E.sacar.length ? ['car','En carga','p-warn'] : ['ok','Completo','p-ok'];
+}
+function porMover(){ const out=[]; for(const [u,s] of SC){ const a=fleteActual(u); if(s.fl!==a) out.push({u, s, a}); } return out.sort((x,y)=>y.s.t-x.s.t); }
+
+/* =========================================================
+   OPERARIO: ESCANEAR
+   ========================================================= */
+let lastCam={code:'',t:0};
+function onScan(raw, via){
+  const code=norm(raw); if(!code) return;
+  if (via==='cámara'){ const now=Date.now(); if(code===lastCam.code && now-lastCam.t<3000) return; lastCam={code,t:now}; }
+  const sel=ST.selFl;
+  if (!sel || !M.fletes.has(sel)){ toast('Primero elige el transporte.'); return; }
+  const b=M.bultos.get(code), prev=SC.get(code), cb=M.cambio.get(code);
+  let t, info={};
+  if (b){
+    if (b.flete!==sel) t='otro';
+    else if (prev && prev.fl===sel) t='dup';
+    else { t = CIE[sel] ? 'cerrado' : 'ok'; if(prev) info.movido=prev.fl; }
+  }
+  else if (cb && !cb.a) t='fuera';
+  else if (M.entregas.has(code)) t='entrega';
+  else if (M.known.has(code)) t='umpsap';
+  else t='nosap';
+  const RES={ok:'OK', cerrado:'OK (TRANSPORTE YA CERRADO)', otro:'NO VA EN ESTE TRANSPORTE', fuera:'FUERA DEL REPORTE', entrega:'ES ENTREGA', umpsap:'NO ES BULTO', nosap:'NO ESTÁ EN SAP'};
+  let res=RES[t]; if(t==='otro') res+=' (VA EN '+b.flete+')'; if(info.movido) res+=' (MOVIDO DE '+info.movido+')';
+  if (t!=='dup') emit('scan', sel, {codigo:code, via, entrega:b?b.entrega:'', resultado:res});
+  LAST={code, t, sel, prev, info};
+  feedback(t==='otro'?'nosap':t);
+  renderScan(true);
+}
+function renderPick(){
+  const q=norm($('pickQ').value);
+  let list=[...M.fletes.values()].map(F=>({F, E:evalFlete(F.id), e:estadoFlete(F.id)}));
+  if(q) list=list.filter(x=>x.F.id.includes(q));
+  const ord={car:0,pen:1,ok:2,des:3,cer:4};
+  list.sort((a,b)=>(ord[a.e[0]]-ord[b.e[0]]) || a.F.id.localeCompare(b.F.id));
+  $('pickList').innerHTML=list.map(({F,E,e})=>{ const n=F.bultos.length, ok=E.leidos.size, w=n?Math.round(ok/n*100):0;
+    return '<button class="pick'+(e[0]==='cer'||e[0]==='des'?' done':'')+'" data-pick="'+esc(F.id)+'" type="button"><span class="pn">'+esc(nomFl(F.id))+'</span><span class="pc"><span class="mono">'+ok+'/'+n+' bultos</span><span class="pill '+e[2]+'">'+e[1]+'</span></span><span class="bar"><i style="width:'+w+'%"></i></span></button>'; }).join('')
+    || '<div class="empty">'+(M.fletes.size?'Ningún transporte coincide.':'Aún no hay reporte del turno.')+'</div>';
+}
+function renderScan(flash){
+  $('opName').textContent=ST.operario||'Operario'; $('btnOp').hidden=!CFG;
+  $('noBd').hidden = !!M.fletes.size || (CFG && SYNC.ok===null);
+  const sel=ST.selFl, has=!!sel && M.fletes.has(sel);
+  $('pickBox').hidden=has; $('workBox').hidden=!has;
+  if(!has){ camOff(); renderPick(); return; }
+  if(LAST && LAST.sel!==sel) LAST=null;
+  const E=evalFlete(sel), n=E.F.bultos.length;
+  $('curFl').textContent=nomFl(sel); $('curCnt').textContent=E.leidos.size+'/'+n;
+  $('curBar').style.width=(n?Math.round(E.leidos.size/n*100):0)+'%';
+  const box=$('dest');
+  if(!LAST){
+    box.className='dest d-idle';
+    box.innerHTML='<div class="lbl">Listo</div><div class="det">Toca <b>Escanear</b> y apunta a la etiqueta de cada bulto del transporte <b class="mono">'+esc(nomFl(sel))+'</b>. Faltan '+E.faltan.length+' bultos.</div>'+(E.cierre?'<div class="det"><b>Este transporte ya fue cerrado por '+esc(E.cierre.resp)+'.</b></div>':'');
+  } else {
+    const L=LAST, b=M.bultos.get(L.code); let cls, lbl, big='', det='';
+    let tt=L.t;
+    if((tt==='ok'||tt==='cerrado'||tt==='dup') && b && b.flete!==sel) tt='cambio';
+    if((tt==='ok'||tt==='cerrado'||tt==='dup'||tt==='otro') && !b) tt='fuera';
+    if (tt==='ok'||tt==='cerrado'){
+      const en=M.entregas.get(b.entrega); const okE=en.bultos.filter(u=>E.leidos.has(u)).length;
+      const comp=!E.faltan.length;
+      cls=tt==='cerrado'?'d-warn':'d-ok'; lbl=comp?'Transporte completo':(tt==='cerrado'?'Correcto · transporte ya cerrado':'Correcto · contado');
+      big=E.leidos.size+' / '+n;
+      det='<span class="small">Contiene '+(b.items||[]).length+' producto'+((b.items||[]).length!==1?'s':'')+' · '+b.unid+' und · <button class="link" type="button" data-ump="'+esc(L.code)+'">ver contenido</button></span><br>Entrega <b class="mono">'+esc(b.entrega)+'</b>: '+okE+' de '+en.bultos.length+(comp?'<br><b>Están todos los bultos.</b> Avisa a la coordinadora para cerrar.':' · faltan '+E.faltan.length);
+      if(tt==='cerrado') det+='<br>La coordinadora ya cerró este transporte: avísale.';
+      if(L.info.movido) det+='<br><b>Ojo:</b> antes estaba contado en el transporte '+esc(L.info.movido)+'. Debe quedarse en este.';
+      const cb=M.cambio.get(L.code); if(cb && cb.a===sel) det+='<br>La etiqueta dice FO '+esc(cb.de)+', pero ahora va en este transporte.';
+    }
+    else if (tt==='dup'){ cls='d-warn'; lbl='Ya contado'; big=E.leidos.size+' / '+n; det='Lo contó '+esc(L.prev.op||'—')+' a las '+hhmm(L.prev.t)+' · no hace falta leerlo de nuevo.'; }
+    else if (tt==='otro'){ cls='d-bad'; lbl='No va en este transporte · va en'; big=nomFl(b.flete); det='<b>Sepáralo.</b> Es de la entrega <b class="mono">'+esc(b.entrega)+'</b>, que va en el transporte '+esc(b.flete)+'.'; const cb=M.cambio.get(L.code); if(cb && cb.de===sel) det+='<br>SAP lo cambió de este transporte al '+esc(b.flete)+'.'; }
+    else if (tt==='cambio'){ cls='d-bad'; lbl='SAP lo cambió · ahora va en'; big=nomFl(b.flete); det='Este bulto se contó aquí, pero SAP lo pasó al transporte '+esc(b.flete)+'. Sácalo y llévalo allá.'; }
+    else if (tt==='fuera'){ cls='d-bad'; lbl='No cargar'; big='Fuera del reporte'; det='SAP sacó este bulto de su transporte. Sepáralo y avisa a la coordinadora.'; }
+    else if (tt==='entrega'){ cls='d-info'; lbl='Eso es una entrega'; big='—'; det='Lee el código de barras de la UMp, no el número de entrega.'; }
+    else if (tt==='umpsap'){ cls='d-warn'; lbl='No es bulto de despacho'; big='Consultar'; det='La UMp existe pero no tiene entrega (pallet o movimiento interno). Avisa a la coordinadora.'; }
+    else { cls='d-bad'; lbl='No está en SAP'; big='Separar'; det='No aparece en el reporte. Revisa la etiqueta o avisa a la coordinadora.'; }
+    box.className='dest '+cls;
+    box.innerHTML='<div class="lbl">'+lbl+'</div><div class="flnum">'+esc(big)+'</div><div class="code">UMp '+esc(L.code)+'</div><div class="det">'+det+'</div>';
+    if (flash){ box.classList.remove('flash'); void box.offsetWidth; box.classList.add('flash'); }
+  }
+  const mine=ALL.filter(s=>s.disp===ST.disp && s.fl===sel).slice().reverse();
+  $('mineN').textContent=mine.filter(s=>s.ok).length;
+  $('mine').innerHTML=mine.slice(0,15).map(s=>{ const now=fleteActual(s.code); const mal=s.ok && now!==sel;
+    return '<div class="r"><span class="c">'+esc(s.code)+'</span><span class="f">'+(s.ok?(mal?'<span style="color:var(--bad)">→ '+esc(nomFl(now))+'</span> <span class="pill p-bad">mover</span>':'<span style="color:var(--ok)">✓ contado</span>'):'<span style="color:var(--bad)">'+esc(/^NO VA/.test(s.res||'')?'✕ no va · va en '+(fleteActual(s.code)||'?'):'✕ '+(s.res||'').toLowerCase())+'</span>')+'</span><span class="muted">'+hhmm(s.t)+'</span></div>'; }).join('') || '<div class="empty">Aún no lees bultos en este transporte.</div>';
+}
+
+/* =========================================================
+   COORDINADORA
+   ========================================================= */
+function show(v){ for(const x of ['vNombre','vHome','vAvance','vMod','vSitio','vScan','vFletes','vFlete']) $(x).hidden = x!==v; window.scrollTo(0,0); if(v!=='vScan') camOff(); }
+function renderFletes(){
+  $('srcName').textContent = ST.bd ? ST.bd.name : '—';
+  $('srcInfo').textContent = !M.fletes.size ? 'sin reporte' : (ST.bd.fecha?ST.bd.fecha+' · ':'')+M.fletes.size+' fletes · '+M.entregas.size+' entregas · '+M.bultos.size+' bultos';
+  const mv=porMover();
+  $('moverBanner').hidden=!mv.length; $('moverCount').textContent=mv.length+' bulto'+(mv.length>1?'s':'');
+  $('moverAll').innerHTML=mv.map(x=>'<div class="camb"><span class="pill p-bad">Mover</span><span class="uu">'+esc(x.u)+'</span><span class="arrow">'+esc(x.s.fl)+' → '+esc(nomFl(x.a))+'</span><span class="m">'+(x.a?'Sacar del camión del flete '+esc(x.s.fl)+' y llevar al '+esc(x.a):'SAP lo sacó del reporte: retirar del flete '+esc(x.s.fl))+' · leído '+(x.s.op?'por '+esc(x.s.op)+' ':'')+'a las '+hhmm(x.s.t)+'</span></div>').join('');
+  const cs=[...M.cambio.values()].sort((a,b)=>b.t-a.t);
+  $('cambBanner').hidden=!cs.length; $('cambCount').textContent=cs.length+' bulto'+(cs.length>1?'s':'');
+  $('cambAll').innerHTML=cs.map(c=>{ const s=SC.get(c.ump); const st = !s ? ['p-mute','Sin leer'] : s.fl===c.a ? ['p-ok','Bien cargado'] : ['p-bad','Por mover'];
+    return '<div class="camb"><span class="pill '+st[0]+'">'+st[1]+'</span><span class="uu">'+esc(c.ump)+'</span><span class="arrow">'+c.ruta.map(x=>esc(nomFl(x))).join(' → ')+'</span><span class="m">Entrega '+esc(c.entrega)+' · detectado '+fechaHora(c.t)+'</span></div>'; }).join('');
+  let nCer=0,nCar=0;
+  const items=[...M.fletes.values()].map(F=>{ const e=estadoFlete(F.id), E=evalFlete(F.id); if(e[0]==='cer'||e[0]==='des') nCer++; if(e[0]==='car'||e[0]==='ok') nCar++; return {F,e,E}; });
+  $('sFl').textContent=M.fletes.size; $('sCer').textContent=nCer; $('sCar').textContent=nCar; $('sBul').textContent=SC.size;
+  const q=norm(flQ);
+  const list=items.filter(({F,e})=>{
+    if (filtro==='pend' && (e[0]==='cer'||e[0]==='des')) return false;
+    if (filtro==='cer' && !(e[0]==='cer'||e[0]==='des')) return false;
+    return !q || F.id.includes(q) || F.ents.some(d=>d.includes(q)) || F.bultos.some(u=>u.includes(q));
+  });
+  const ord={car:0,ok:1,pen:2,des:3,cer:4};
+  list.sort((a,b)=>(ord[a.e[0]]-ord[b.e[0]]) || (b.F.bultos.length-a.F.bultos.length));
+  const fu = q && M.bultos.get(q);
+  const foundHtml = fu ? '<div class="found"><span><b class="mono">UMp '+esc(q)+'</b> · transporte <b class="mono">'+esc(nomFl(fu.flete))+'</b> · entrega '+esc(fu.entrega)+'</span><button type="button" class="primary" data-ump="'+esc(q)+'">Ver contenido</button></div>' : '';
+  $('flList').innerHTML = foundHtml + list.map(({F,e,E})=>{
+    const n=F.bultos.length, ok=E.leidos.size, w=n?Math.round(ok/n*100):0;
+    const ops=[...new Set(ALL.filter(s=>s.fl===F.id && s.ok).map(s=>s.op).filter(Boolean))];
+    const flags=(E.sacar.length?' <span class="pill p-bad">'+E.sacar.length+' por sacar</span>':'')+(E.traer.length?' <span class="pill p-bad">'+E.traer.length+' por traer</span>':'');
+    const extra=(F.sinUmp?' · <span style="color:var(--warn)">'+F.sinUmp+(F.sinUmp>1?' tareas':' tarea')+' sin UMp</span>':'')+(F.abiertas?' · <span style="color:var(--warn)">picking abierto</span>':'');
+    return '<button class="fl s-'+e[0]+'" data-fl="'+esc(F.id)+'" type="button"><span><span class="fn">'+esc(nomFl(F.id))+'</span> <span class="pill '+e[2]+'">'+e[1]+'</span>'+flags+'</span><span class="cnt">'+ok+'/'+n+'</span><span class="bar"><i style="width:'+w+'%"></i></span><span class="fm">'+F.ents.length+' entrega'+(F.ents.length>1?'s':'')+' · '+n+' bultos'+extra+(ops.length?' · contando: '+esc(ops.join(', ')):'')+(E.cierre?' · cerró '+esc(E.cierre.resp)+' '+fechaHora(E.cierre.t):'')+'</span></button>';
+  }).join('') || '<div class="empty">'+(M.fletes.size?'No hay fletes con este filtro.':(CFG?'Publica el reporte del turno abajo.':'Toca <b>Cargar reporte (hoja BD)</b>.'))+'</div>';
+}
+function bLine(b){ return 'Entrega '+esc(b.entrega)+' · OA '+esc([...b.oas].join(', '))+' · '+b.lineas+' lín. / '+b.unid+' und'+(b.fase?' · '+esc(b.fase):''); }
+const quien = s => (s.op ? esc(s.op)+' · ' : '') + hhmm(s.t) + (s.via?' · '+esc(s.via):'');
+function openFlete(id){ CUR=id; setTab('fal'); show('vFlete'); $('resp').value=ST.resp||ST.operario||''; $('obs').hidden=true; $('obs').value=''; renderFlete(); }
+function renderFlete(){
+  if(!M.fletes.has(CUR)){ show('vFletes'); renderFletes(); return; }
+  const E=evalFlete(CUR), F=E.F;
+  $('fTitle').textContent=nomFl(CUR);
+  const e=estadoFlete(CUR); $('fState').className='pill '+e[2]; $('fState').textContent=e[1];
+  $('kEsp').textContent=F.bultos.length; $('kLei').textContent=E.leidos.size; $('kFal').textContent=E.faltan.length; $('kMov').textContent=E.sacar.length;
+  $('pBar').style.width=(F.bultos.length?Math.round(E.leidos.size/F.bultos.length*100):0)+'%';
+  $('movPanel').hidden=!E.sacar.length && !E.traer.length;
+  $('movList').innerHTML = E.sacar.map(x=>'<div class="camb"><span class="pill p-bad">Sacar</span><span class="uu">'+esc(x.u)+'</span><span class="arrow">→ '+esc(nomFl(x.a))+'</span><span class="m">Se cargó aquí ('+quien(x.s)+') y SAP lo pasó '+(x.a?'al flete '+esc(x.a):'fuera del reporte')+'.</span></div>').join('')
+    + E.traer.map(x=>'<div class="camb"><span class="pill p-bad">Traer</span><span class="uu">'+esc(x.u)+'</span><span class="arrow">← '+esc(x.s.fl)+'</span><span class="m">Está cargado en el flete '+esc(x.s.fl)+' ('+quien(x.s)+'). Ahora va en este.</span></div>').join('');
+  const done=F.ents.filter(d=>M.entregas.get(d).bultos.every(u=>E.leidos.has(u))).length;
+  $('entSum').textContent=done+' de '+F.ents.length+' completas';
+  const open=new Set([...document.querySelectorAll('#entList details[open]')].map(x=>x.dataset.e));
+  $('entList').innerHTML=F.ents.map(d=>{ const en=M.entregas.get(d); const n=en.bultos.length, ok=en.bultos.filter(u=>E.leidos.has(u)).length; const w=n?Math.round(ok/n*100):0;
+    const pill = n && ok===n ? '<span class="pill p-ok">completa</span>' : (en.sinUmp?'<span class="pill p-warn">'+en.sinUmp+' sin UMp</span>':'');
+    return '<details class="ent" data-e="'+d+'"'+(open.has(d)?' open':'')+'><summary><span><span class="en">'+d+'</span> '+pill+'</span><span class="mono">'+ok+'/'+n+'</span><span class="bar"><i style="width:'+w+'%"></i></span></summary><div class="umps">'+en.bultos.map(u=>'<button type="button" class="u'+(E.leidos.has(u)?' ok':'')+'" data-ump="'+u+'">'+u+'</button>').join('')+'</div></details>'; }).join('');
+  $('cFal').textContent=E.faltan.length; $('cLei').textContent=E.leidos.size; $('cInc').textContent=ALL.filter(s=>s.fl===CUR && !s.ok).length;
+  let html='';
+  if (tab==='fal'){
+    html=E.faltan.map(u=>{const b=M.bultos.get(u), s=SC.get(u), cb=M.cambio.get(u); return '<div class="item"><span class="s" style="background:var(--warn)"></span><span class="uu tap" data-ump="'+u+'">'+u+(b.abierta?' <span class="pill p-warn">picking abierto</span>':'')+(s?' <span class="pill p-bad">en flete '+esc(s.fl)+'</span>':'')+(cb&&cb.a===CUR?' <span class="pill p-info">etiqueta FO '+esc(cb.de)+'</span>':'')+'</span><span class="m">'+bLine(b)+(b.prods[0]?'<br>'+esc(b.prods[0]):'')+'</span></div>'}).join('') || '<div class="empty">'+(F.bultos.length?'No falta ningún bulto.':'Este flete no tiene bultos con UMp.')+'</div>';
+  } else if (tab==='inc'){
+    const inc=ALL.filter(s=>s.fl===CUR && !s.ok).slice().reverse();
+    html=inc.map(s=>'<div class="item"><span class="s" style="background:var(--bad)"></span><span class="uu">'+esc(s.code)+' <span class="pill p-bad">'+esc(s.res||'')+'</span></span><span class="m">'+quien(s)+'</span></div>').join('') || '<div class="empty">Sin incidencias.</div>';
+  } else {
+    html=[...E.leidos.entries()].sort((a,b)=>b[1].t-a[1].t).map(([u,s])=>{const b=M.bultos.get(u); return '<div class="item"><span class="s" style="background:var(--ok)"></span><span class="uu tap" data-ump="'+u+'">'+u+'</span><span class="m">'+bLine(b)+'<br>'+quien(s)+'</span><button class="x" data-del="'+esc(u)+'" type="button">Quitar</button></div>'}).join('') || '<div class="empty">Aún no hay bultos cargados.</div>';
+  }
+  $('list').innerHTML=html;
+  const cie=E.cierre;
+  $('closedBox').hidden=!cie; $('closeForm').hidden=!!cie; $('btnReopen').hidden=!cie;
+  if (cie) $('closedBox').innerHTML='<b>'+(cie.completo?'Flete cerrado':'Cerrado con faltantes')+'</b> por '+esc(cie.resp)+' · '+fechaHora(cie.t)+' · '+cie.leidos+' de '+cie.total+' bultos'+(cie.obs?'<br>Obs.: '+esc(cie.obs):'');
+  const comp=!E.faltan.length && F.bultos.length>0;
+  $('btnClose').disabled=!comp || E.sacar.length>0; $('btnCloseDes').hidden=comp && !E.sacar.length;
+  $('closeHint').textContent = E.sacar.length ? 'Hay '+E.sacar.length+' bulto(s) cargados que ya no van en este flete: sácalos antes de cerrar (al re-escanearlos en su flete se resuelven).' : comp ? 'Todos los bultos están cargados.' : 'Faltan '+E.faltan.length+' bultos para cerrar.';
+}
+function setTab(k){ tab=k; for(const j of ['fal','lei','inc']) $('t-'+j).setAttribute('aria-selected', j===k); }
+function rerender(){ if(!$('infoSheet').hidden) renderInfo(); if(!$('stageSheet').hidden) renderStage(); if(!$('vAvance').hidden) renderAvance(); else if(!$('vHome').hidden) renderHome(); else if(!$('vSitio').hidden) renderSitio(); else if(!$('vFlete').hidden) renderFlete(); else if(!$('vFletes').hidden) renderFletes(); else if(!$('vScan').hidden) renderScan(false); paintSync(); }
+
+/* ---------- contenido de una UMp ---------- */
+function openUmp(u){
+  const b=M.bultos.get(u); if(!b){ toast('Esa UMp no está en el reporte.'); return; }
+  const s=SC.get(u), cb=M.cambio.get(u), items=(b.items||[]).slice().sort((x,y)=>x.d.localeCompare(y.d));
+  const estado = s ? (s.fl===b.flete ? '<span class="pill p-ok">Contado</span>'+(s.op?' por '+esc(s.op):'')+' a las '+hhmm(s.t) : '<span class="pill p-bad">Por mover</span> contado en '+esc(s.fl)+' por '+esc(s.op||'—')) : '<span class="pill p-warn">Falta contar</span>';
+  $('shUmp').textContent=u;
+  $('shBody').innerHTML='<dl class="kv"><dt>Transporte</dt><dd class="mono">'+esc(nomFl(b.flete))+(cb&&cb.a===b.flete?' <span class="pill p-info">etiqueta dice '+esc(cb.de)+'</span>':'')+'</dd><dt>Entrega</dt><dd class="mono">'+esc(b.entrega)+'</dd><dt>Orden almacén</dt><dd class="mono">'+esc([...b.oas].join(', '))+'</dd>'+(b.fase?'<dt>Fase</dt><dd>'+esc(b.fase)+'</dd>':'')+'<dt>Estado</dt><dd>'+estado+'</dd></dl>'
+    +'<div class="small muted">'+items.length+' producto'+(items.length!==1?'s':'')+' · '+b.unid+' unidades'+(b.abierta?' · <b style="color:var(--warn)">picking abierto</b>':'')+'</div>'
+    +'<div class="tblwrap"><table class="items"><thead><tr><th>Código</th><th>Descripción</th><th style="text-align:right">Cant.</th><th>UM</th></tr></thead><tbody>'
+    +items.map(it=>'<tr><td class="c">'+esc(it.p)+'</td><td>'+esc(it.d)+(b.oas.size>1?'<div class="small muted">OA '+esc(it.oa)+'</div>':'')+'</td><td class="n">'+it.q+'</td><td>'+esc(it.um)+'</td></tr>').join('')
+    +'</tbody></table></div>';
+  $('umpSheet').hidden=false;
+}
+$('shClose').addEventListener('click', ()=>{ $('umpSheet').hidden=true; });
+$('umpSheet').addEventListener('click', e=>{ if(e.target.id==='umpSheet') $('umpSheet').hidden=true; });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ if(!$('umpSheet').hidden) $('umpSheet').hidden=true; else if(!$('stageSheet').hidden){ $('stageSheet').hidden=true; SG=null; } else { $('infoSheet').hidden=true; IF=null; } } });
+document.addEventListener('click', e=>{ const x=e.target.closest('[data-ump]'); if(x){ e.preventDefault(); e.stopPropagation(); openUmp(x.dataset.ump); } }, true);
+
+/* ---------- sonido y vibración ---------- */
+let AC=null;
+function tone(f,d,at=0){ try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)(); const o=AC.createOscillator(), g=AC.createGain(); o.frequency.value=f; o.type='square'; g.gain.value=.08; o.connect(g); g.connect(AC.destination); const t=AC.currentTime+at; o.start(t); o.stop(t+d);}catch(e){} }
+function feedback(t){
+  if (t==='ok') tone(1400,.09);
+  else if (t==='dup'||t==='entrega'||t==='umpsap'||t==='cerrado'){ tone(700,.12); tone(700,.12,.18); }
+  else { tone(260,.35); tone(260,.35,.45); }
+  try{ navigator.vibrate && navigator.vibrate(t==='ok'?60:[200,80,200]); }catch(e){}
+}
+function toast(m){ const t=$('toast'); t.textContent=m; t.hidden=false; clearTimeout(toast._t); toast._t=setTimeout(()=>t.hidden=true,3500); }
+
+/* ---------- cámara ---------- */
+let reader=null, wake=null, camDenied=false;
+function hints(){ const h=new Map(), F=ZXing.BarcodeFormat; h.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[F.CODE_39,F.CODE_128,F.CODE_93,F.ITF,F.EAN_13,F.QR_CODE]); h.set(ZXing.DecodeHintType.TRY_HARDER,true); return h; }
+async function camOn(){
+  $('camNote').hidden=true;
+  if (!window.ZXing){ toast('No cargó el lector de códigos. Revisa la conexión.'); return; }
+  if (!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ camDenied=true; $('photoIn').click(); return; }
+  $('camBox').hidden=false; $('btnCam').textContent='Detener cámara';
+  try{
+    reader=new ZXing.BrowserMultiFormatReader(hints(),200);
+    await reader.decodeFromConstraints({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}}, $('video'), res=>{ if(res) onScan(res.getText(),'cámara'); });
+    try{ wake=await navigator.wakeLock.request('screen'); }catch(e){}
+  }catch(e){
+    camOff();
+    if (e && e.name==='NotAllowedError' && location.protocol==='https:' && !window.claude){ const n=$('camNote'); n.hidden=false; n.textContent='No diste permiso a la cámara. Toca el candado junto a la dirección, activa "Cámara" y vuelve a tocar Escanear.'; }
+    else { camDenied=true; $('photoIn').click(); }
+  }
+}
+function camOff(){ try{ reader&&reader.reset(); }catch(e){} reader=null; $('camBox').hidden=true; $('btnCam').textContent='Escanear'; try{ wake&&wake.release(); }catch(e){} wake=null; }
+async function decodePhoto(file){
+  const img=await new Promise((ok,ko)=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=ko; i.src=URL.createObjectURL(file); });
+  for (const max of [1600,2400,1000]) for (const rot of [0,90]){
+    const sc=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight)); const w=Math.round(img.naturalWidth*sc), h=Math.round(img.naturalHeight*sc);
+    const cv=document.createElement('canvas'), ctx=cv.getContext('2d');
+    if(rot){ cv.width=h; cv.height=w; ctx.translate(h,0); ctx.rotate(Math.PI/2);} else { cv.width=w; cv.height=h; }
+    ctx.drawImage(img,0,0,w,h);
+    if ('BarcodeDetector' in window && !rot){ try{ const r=await new BarcodeDetector({formats:['code_39','code_128','code_93','itf','ean_13','qr_code']}).detect(cv); if(r.length) return r[0].rawValue; }catch(e){} }
+    try{ const r=new ZXing.MultiFormatReader().decode(new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(new ZXing.HTMLCanvasElementLuminanceSource(cv))),hints()); if(r) return r.getText(); }catch(e){}
+  }
+  return null;
+}
+
+/* ---------- reporte (hoja BD) ---------- */
+function cellStr(v){ if(v==null) return ''; if(typeof v==='number') return String(v); if(v instanceof Date) return v.toISOString(); return String(v).trim(); }
+function readWorkbook(buf, fname){
+  const wb=XLSX.read(buf,{type:'array'});
+  let sh=wb.SheetNames.find(n=>n.trim().toUpperCase()==='BD');
+  const nh=s=>String(s??'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+  const tryS=n=>{ const a=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:true,defval:''}); const h=a.slice(0,30).findIndex(r=>r.some(c=>nh(c)===nh(C.ump))); return h<0?null:{a,h}; };
+  let got=sh?tryS(sh):null;
+  if(!got) for(const n of wb.SheetNames){ got=tryS(n); if(got){ sh=n; break; } }
+  if(!got) throw new Error('No encontré la columna "UMp destino". Carga el REPORTE con la hoja BD.');
+  const aoa=got.a, hi=got.h, cols=aoa[hi].map(c=>String(c).trim());
+  if(!cols.some(c=>nh(c)===nh(C.doc))) throw new Error('La hoja '+sh+' no tiene la columna "Documento".');
+  if(!cols.some(c=>nh(c)===nh(C.flete))) throw new Error('La hoja '+sh+' no tiene la columna "Documento Flete".');
+  const keep=KCOLS.map(n=>cols.findIndex(c=>nh(c)===nh(n)));
+  const iDoc=KCOLS.indexOf(C.doc), iUmp=KCOLS.indexOf(C.ump), iZona=KCOLS.indexOf(C.zona), iUbi=KCOLS.indexOf(C.ubi);
+  const falta=[]; if(keep[KCOLS.indexOf(C.muelle)]<0) falta.push('Muelle');
+  const rows=aoa.slice(hi+1).map(r=>keep.map(i=>i<0?'':cellStr(r[i])))
+    .filter(r=>r[iDoc]||r[iUmp])
+    .map(r=> r[iDoc] ? r : KCOLS.map((_,i)=>i===iUmp?r[i]:''));
+  if(keep[iZona]<0) rows.forEach(r=>{ if(r[iDoc]) r[iZona] = /^AND/i.test(r[iUbi]||'') ? 'En muelle' : (r[iUbi]?'En embalaje':''); });
+  if(falta.length) setTimeout(()=>toast('La hoja '+sh+' no trae la columna '+falta.join(' ni ')+'.'+(falta.includes('Zona')?' La Zona se calculó con la ubicación (AND = En muelle).':'')),2600);
+  const fi=cols.findIndex(c=>nh(c)==='fecha'); let fecha='';
+  if(fi>=0){ const v=aoa[hi+1]&&aoa[hi+1][fi]; if(typeof v==='number'){ const d=XLSX.SSF.parse_date_code(v); if(d) fecha=String(d.d).padStart(2,'0')+'/'+String(d.m).padStart(2,'0')+'/'+d.y; } }
+  return {name:fname, fecha, rows, faltan:falta};
+}
+function setBd(bd, cols){ ST.bd=fixBd(bd, cols); if(bd && !cols && bd.faltan===undefined) bd.faltan=[]; M=build(bd?bd.rows:[], bd?bd.cambios:[]); save(); refold(); }
+
+/* ---------- nube (Google Apps Script) ---------- */
+async function api(body, ms){
+  const ctl=new AbortController(); const tm=setTimeout(()=>ctl.abort(), ms||20000);
+  try{
+    const r=await fetch(CFG.url,{method:'POST', body:JSON.stringify(Object.assign({clave:CFG.clave},body)), signal:ctl.signal, redirect:'follow'});
+    const j=await r.json(); if(!j.ok) throw new Error(j.error||'error'); return j;
+  } finally { clearTimeout(tm); }
+}
+let pushT=null;
+function pushSoon(ms){ clearTimeout(pushT); pushT=setTimeout(push, ms); }
+async function push(){
+  if(!CFG || !ST.outbox.length) return;
+  const lote=ST.outbox.slice(0,200);
+  try{
+    await api({accion:'eventos_add', eventos:lote});
+    const ids=new Set(lote.map(e=>e.id));
+    ST.outbox=ST.outbox.filter(e=>!ids.has(e.id)); ST.events.push(...lote);
+    SYNC.ok=true; SYNC.last=Date.now(); save(); paintSync();
+    if(ST.outbox.length) pushSoon(200);
+  }catch(e){ SYNC.ok=false; SYNC.err=String(e.message||e); paintSync(); pushSoon(6000); }
+}
+async function pull(){
+  if(!CFG || SYNC.busy) return; SYNC.busy=true;
+  try{
+    await push();
+    const r=await api({accion:'eventos_get', desde:ST.hasta||0});
+    let changed=false;
+    if(!ST.bd || String(r.version)!==String(ST.bd.version)){
+      const b=await api({accion:'bd_get'},40000);
+      if(b.vacio || !b.data){ if(ST.bd) setBd(null); }
+      else {
+        const turnoNuevo = !ST.bd || String(b.turno)!==String(ST.bd.turno);
+        setBd({version:b.version, turno:b.turno, name:b.name, fecha:b.fecha, rows:b.data.rows, cambios:b.data.cambios||[]}, b.data.cols);
+        if(turnoNuevo){ ST.events=[]; ST.hasta=0; LAST=null; const r2=await api({accion:'eventos_get', desde:0}); addEvents(r2); }
+      }
+      changed=true;
+    }
+    if(addEvents(r)) changed=true;
+    SYNC.ok=true; SYNC.last=Date.now(); SYNC.err='';
+    if(changed){ refold(); save(); }
+  }catch(e){ SYNC.ok=false; SYNC.err=String(e.message||e); }
+  finally{ SYNC.busy=false; rerender(); }
+}
+function addEvents(r){
+  if(!r || !r.eventos) return false;
+  if(ST.bd && String(r.turno)!==String(ST.bd.turno)) return false;
+  const have=new Set(ST.events.map(e=>e.id)); let n=0;
+  for(const e of r.eventos){ if(!have.has(e.id)){ ST.events.push(e); n++; } }
+  ST.hasta=Math.max(ST.hasta||0, Number(r.hasta)||0);
+  return n>0;
+}
+function paintSync(){
+  if(!CFG) return;
+  const pend=ST.outbox.length;
+  let cls='wait', txt='Conectando…';
+  if(SYNC.ok===true){ cls=pend?'wait':'on'; const s=Math.round((Date.now()-SYNC.last)/1000); txt=(pend?pend+' por enviar · ':'')+'En línea · '+(s<5?'ahora':'hace '+(s<60?s+' s':Math.round(s/60)+' min')); }
+  else if(SYNC.ok===false){ cls='off'; txt='Sin señal'+(pend?' · '+pend+' lecturas guardadas, se envían solas':''); if(SYNC.err==='clave') txt='Clave incorrecta en config.js'; }
+  for(const [d,t] of [['syncDot','syncTxt'],['syncDot2','syncTxt2'],['syncDot3','syncTxt3']]){ $(d).className='dot '+cls; $(t).textContent=txt; }
+}
+
+/* ---------- exportar ---------- */
+function sheet(wb, rows, name, empty){ const r=rows.length?rows:[empty]; const ws=XLSX.utils.json_to_sheet(r); ws['!cols']=Object.keys(r[0]).map(k=>({wch:Math.max(11,k.length+2)})); XLSX.utils.book_append_sheet(wb,ws,name); }
+async function exportFletes(ids, fn){
+  const R=[],D=[];
+  ids.forEach(id=>{ const E=evalFlete(id), F=E.F, cie=E.cierre;
+    R.push({Flete:id, Entregas:F.ents.length, 'Bultos SAP':F.bultos.length, Cargados:E.leidos.size, Faltan:E.faltan.length, 'Por sacar':E.sacar.length, 'Por traer':E.traer.length, Estado:estadoFlete(id)[1], Responsable:cie?cie.resp:'', 'Hora cierre':cie?fechaHora(cie.t):'', Observación:cie?cie.obs:''});
+    F.bultos.forEach(u=>{ const b=M.bultos.get(u), s=SC.get(u); D.push({Flete:id, Entrega:b.entrega, UMp:u, 'Orden almacén':[...b.oas].join(', '), Líneas:b.lineas, Unidades:b.unid, Fase:b.fase, Estado: s ? (s.fl===id?'CARGADO':'EN FLETE '+s.fl) : 'FALTA', Operario:s?s.op:'', Hora:s?hhmm(s.t):''}); });
+  });
+  const MV=porMover().filter(x=>ids.includes(x.s.fl)||ids.includes(x.a)).map(x=>({UMp:x.u, 'Cargado en flete':x.s.fl, 'Va en flete':nomFl(x.a), Operario:x.s.op||'', Hora:hhmm(x.s.t)}));
+  const CB=[...M.cambio.values()].filter(c=>ids.some(id=>c.ruta.includes(id))).map(c=>{ const s=SC.get(c.ump); return {UMp:c.ump, Entrega:c.entrega, 'Flete en etiqueta':c.de, 'Flete actual':nomFl(c.a), Recorrido:c.ruta.map(nomFl).join(' → '), Detectado:fechaHora(c.t), Estado: !s?'SIN LEER': s.fl===c.a?'BIEN CARGADO':'POR MOVER'}; });
+  const LE=ALL.filter(s=>ids.includes(s.fl) || ids.includes(fleteActual(s.code))).map(s=>({Hora:hhmm(s.t), UMp:s.code, 'Transporte contado':s.fl, 'Transporte según SAP':nomFl(fleteActual(s.code)), Resultado:s.res||'', Operario:s.op||'', Vía:s.via||''}));
+  const wb=XLSX.utils.book_new();
+  sheet(wb,R,'Resumen fletes',{Flete:'(sin datos)'}); sheet(wb,D,'Detalle bultos',{UMp:'(sin datos)'}); sheet(wb,MV,'Por mover',{UMp:'(nada por mover)'}); sheet(wb,CB,'Cambios de flete',{UMp:'(sin cambios)'}); sheet(wb,LE,'Lecturas',{UMp:'(sin lecturas)'});
+  let dl=null; try{ dl=window.claude && await window.claude.use('downloads'); }catch(e){}
+  if(dl){ const buf=XLSX.write(wb,{bookType:'xlsx',type:'array'}); try{ await dl.save({filename:fn,data:new Blob([buf])}); toast('Excel listo.'); }catch(e){ if(e&&e.code!=='declined') toast('No se pudo guardar el Excel.'); } }
+  else { try{ XLSX.writeFile(wb,fn); }catch(e){ toast('No se pudo descargar el Excel aquí.'); } }
+}
+const stamp=()=>{ const d=new Date(); return d.toISOString().slice(0,10)+'_'+String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0'); };
+
+/* ---------- eventos de pantalla ---------- */
+$('btnNombre').addEventListener('click', ()=>{ const n=$('inNombre').value.trim(); if(n.length<3){ toast('Escribe tu nombre.'); return; } ST.operario=n; save(); start(); });
+$('inNombre').addEventListener('keydown', e=>{ if(e.key==='Enter') $('btnNombre').click(); });
+$('btnOp').addEventListener('click', ()=>{ $('inNombre').value=ST.operario; show('vNombre'); });
+$('pickList').addEventListener('click', e=>{ const b=e.target.closest('[data-pick]'); if(!b) return; ST.selFl=b.dataset.pick; LAST=null; save(); renderScan(false); window.scrollTo(0,0); if(matchMedia('(pointer:fine)').matches) $('code').focus(); });
+$('pickQ').addEventListener('input', renderPick);
+$('pickQ').addEventListener('keydown', e=>{ if(e.key==='Enter'){ const q=norm(e.target.value); const m=[...M.fletes.keys()].filter(id=>id.includes(q)); if(m.length===1){ ST.selFl=m[0]; LAST=null; e.target.value=''; save(); renderScan(false); } else toast(m.length?'Hay '+m.length+' transportes con esos números: toca el correcto.':'Ningún transporte coincide.'); } });
+$('btnChange').addEventListener('click', ()=>{ ST.selFl=''; LAST=null; save(); camOff(); $('pickQ').value=''; renderScan(false); });
+$('btnSup').addEventListener('click', ()=>coordGate(()=>{ show('vFletes'); renderFletes(); paintSync(); }));
+$('btnToScan').addEventListener('click', ()=>{ show('vScan'); renderScan(false); });
+$('code').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); onScan(e.target.value,'lector'); e.target.value=''; } });
+$('btnCam').addEventListener('click', ()=>{ if(reader) return camOff(); if(camDenied) return $('photoIn').click(); camOn(); });
+$('btnCamOff').addEventListener('click', camOff);
+$('photoIn').addEventListener('change', async e=>{ const f=e.target.files[0]; e.target.value=''; if(!f) return; toast('Leyendo foto…'); let v=null; try{ v=await decodePhoto(f); }catch(err){} if(v) onScan(v,'foto'); else { feedback('nosap'); toast('No se pudo leer el código. Acércate y que el código salga horizontal.'); } });
+$('flList').addEventListener('click', e=>{ const b=e.target.closest('[data-fl]'); if(b) openFlete(b.dataset.fl); });
+$('flQ').addEventListener('input', e=>{ flQ=e.target.value; renderFletes(); });
+document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>{ filtro=b.dataset.f; document.querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed', x===b)); renderFletes(); }));
+$('btnSync').addEventListener('click', ()=>pull());
+$('fileIn').addEventListener('change', async e=>{ const f=e.target.files[0]; e.target.value=''; if(!f) return;
+  try{ const r=readWorkbook(new Uint8Array(await f.arrayBuffer()), f.name); const same = ST.bd && (!r.fecha || !ST.bd.fecha || ST.bd.fecha===r.fecha);
+    const nuevos = same ? diffBd(ST.bd.rows, r.rows) : [];
+    setBd({version:String(Date.now()), turno:'local', name:r.name+' · BD', fecha:r.fecha, rows:r.rows, cambios: same ? mergeCambios(ST.bd.cambios, nuevos) : [], faltan:r.faltan||[]}, KCOLS); renderFletes();
+    toast('Reporte cargado: '+M.fletes.size+' fletes, '+M.bultos.size+' bultos.'+(nuevos.length?' '+nuevos.length+' bulto(s) cambiaron de flete.':'')); }catch(err){ toast(err.message||'No se pudo leer el archivo.'); } });
+let SUP=null;
+$('supFile').addEventListener('change', async e=>{ const f=e.target.files[0]; e.target.value=''; if(!f) return;
+  try{ SUP=readWorkbook(new Uint8Array(await f.arrayBuffer()), f.name); const m=build(SUP.rows);
+    $('supInfo').innerHTML='<b>'+esc(f.name)+'</b>'+(SUP.fecha?' · '+SUP.fecha:'')+' · '+m.fletes.size+' fletes · '+m.entregas.size+' entregas · '+m.bultos.size+' bultos';
+    $('supPub').disabled=false;
+    $('supNuevo').checked = !ST.bd || (SUP.fecha && SUP.fecha!==ST.bd.fecha);
+    if(ST.bd && !$('supNuevo').checked){ const d=diffBd(ST.bd.rows, SUP.rows); if(d.length) $('supInfo').innerHTML+='<br><b style="color:var(--bad)">'+d.length+' bulto(s) cambiaron de flete</b> respecto al reporte publicado.'; }
+  }catch(err){ SUP=null; $('supPub').disabled=true; $('supInfo').textContent=err.message; } });
+$('supPub').addEventListener('click', async ()=>{
+  if(!SUP) return; const cs=$('supClave').value.trim(); if(!cs){ toast('Escribe la clave de coordinadora.'); $('supClave').focus(); return; }
+  $('supPub').disabled=true; $('supPub').textContent='Publicando…';
+  try{
+    const nt=$('supNuevo').checked; const nuevos=(!nt && ST.bd)?diffBd(ST.bd.rows, SUP.rows):[];
+    const cambios=(!nt && ST.bd)?mergeCambios(ST.bd.cambios, nuevos):[];
+    await api({accion:'bd_set', clave_sup:cs, nuevo_turno:nt, name:SUP.name+' · BD', fecha:SUP.fecha, cols:KCOLS, rows:SUP.rows, cambios}, 60000);
+    toast('Reporte publicado.'+(nuevos.length?' '+nuevos.length+' bulto(s) cambiaron de flete.':'')+' Los celulares lo reciben en segundos.'); SUP=null; $('supInfo').textContent=''; $('supPanel').open=false;
+    await pull();
+  }catch(err){ toast(String(err.message)==='clave_sup'?'Clave de coordinadora incorrecta.':'No se pudo publicar. Revisa la conexión.'); $('supPub').disabled=false; }
+  finally{ $('supPub').textContent='3. Publicar para todos'; }
+});
+$('btnBack').addEventListener('click', ()=>{ CUR=null; show('vFletes'); renderFletes(); });
+for (const k of ['fal','lei','inc']) $('t-'+k).addEventListener('click', ()=>{ setTab(k); renderFlete(); });
+$('list').addEventListener('click', e=>{ const b=e.target.closest('[data-del]'); if(!b) return; const u=b.dataset.del;
+  ALL.filter(s=>s.code===u && s.fl===CUR).forEach(s=>emit('del', CUR, {ref:s.id, codigo:u, resultado:'QUITADO'})); renderFlete(); toast('Lectura quitada.'); });
+function cerrar(completo){
+  const resp=$('resp').value.trim(); if(!resp){ toast('Escribe el nombre del responsable.'); $('resp').focus(); return; }
+  const obs=$('obs').value.trim();
+  if(!completo){ if($('obs').hidden){ $('obs').hidden=false; $('obs').focus(); toast('Escribe la observación y vuelve a tocar "Cerrar con faltantes".'); return; } if(!obs){ toast('La observación es obligatoria.'); $('obs').focus(); return; } }
+  const E=evalFlete(CUR); ST.resp=resp;
+  emit('cierre', CUR, {obs:JSON.stringify({resp, obs, completo, leidos:E.leidos.size, total:E.F.bultos.length}), resultado: completo?'CERRADO':'CERRADO CON FALTANTES', codigo:String(E.leidos.size)+'/'+E.F.bultos.length});
+  tone(1200,.2); renderFlete(); toast(completo?'Flete cerrado.':'Flete cerrado con faltantes.');
+}
+$('btnClose').addEventListener('click', ()=>cerrar(true));
+$('btnCloseDes').addEventListener('click', ()=>cerrar(false));
+$('btnReopen').addEventListener('click', ()=>{ emit('reabrir', CUR, {resultado:'REABIERTO'}); renderFlete(); toast('Flete reabierto.'); });
+$('btnExport').addEventListener('click', ()=>exportFletes([CUR],'Flete_'+CUR+'_'+stamp()+'.xlsx'));
+$('btnExportAll').addEventListener('click', ()=>exportFletes([...M.fletes.keys()],'Despacho_fletes_'+stamp()+'.xlsx'));
+$('btnResetAll').addEventListener('click', ()=>$('resetAllBox').hidden=false);
+$('resetAllNo').addEventListener('click', ()=>$('resetAllBox').hidden=true);
+$('resetAllYes').addEventListener('click', ()=>{ ST.events=[]; LAST=null; save(); refold(); $('resetAllBox').hidden=true; renderFletes(); toast('Lecturas borradas.'); });
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) pull(); });
+window.addEventListener('online', ()=>pull());
+
+/* ---------- avance general ---------- */
+const STAGES=[
+  {k:'mue', l:'Muelle'}, {k:'pick', l:'Pickeado'}, {k:'aud', l:'Auditado', man:['Pendiente','Completo'], bul:true}, {k:'emb', l:'Embalado', man:['Pendiente','Completo'], bul:true},
+  {k:'cont', l:'Contabilizado'}, {k:'anc', l:'Anclado'}, {k:'fij', l:'Fijado', man:['Pendiente','Fijado']}, {k:'sit', l:'En sitio', man:['Pendiente','En embalaje','En muelle']}
+];
+function manState(fl, st){ const e=(EST[fl]||{})[st.k]; const v=e?e.v:st.man[0]; const i=st.man.indexOf(v); const last=i===st.man.length-1;
+  return {v, cls: last?'st-ok':(i>0?'st-pro':'st-pen'), done:last, who:e?(e.op||'')+' '+hhmm(e.t).slice(0,5):''}; }
+const esEcom = F => /^(EC|ECOM)/i.test(String(F.canal||'').trim());
+// En sitio: automático desde Ubic.dest.original (PEMB-SALIDA = embalaje, AND = muelle).
+// E-commerce: aunque esté en AND sigue en embalaje hasta que el operario marque En muelle.
+function sitState(F, bl){
+  bl = bl || F.bultos;
+  const man = manState(F.id, STAGES.find(s=>s.k==='sit'));
+  let nA=0, nP=0; for(const u of bl){ const ub=String((M.bultos.get(u)||{}).ubi||'').toUpperCase(); if(/^AND/.test(ub)) nA++; else if(/PEMB/.test(ub)) nP++; }
+  const n=bl.length, ec=esEcom(F);
+  const mk=(v, who, auto)=>({v, who, auto, n, nA, nP, ec, done:v==='En muelle', cls: v==='En muelle'?'st-ok':(v==='En embalaje'?'st-pro':'st-pen')});
+  if(man.v!=='Pendiente') return mk(man.v, man.who, false);
+  if(!n) return mk('Pendiente','',true);
+  if(ec) return mk('En embalaje', 'e-commerce · falta confirmar', true);
+  if(nA===n) return mk('En muelle', 'auto · AND', true);
+  if(nP||nA) return mk('En embalaje', 'auto · '+(nA?nA+'/'+n+' en AND':'PEMB'), true);
+  return mk('Pendiente','',true);
+}
+const MSEL={avBloque:new Set(), avCanal:new Set(), avFase:new Set()};
+const msArr = id => [...MSEL[id]];
+function msRender(id, opts){
+  const el=$(id), set=MSEL[id], label=el.dataset.label;
+  for(const v of [...set]) if(!opts.some(o=>o.v===v)) set.delete(v);
+  const open = el.querySelector('.msp') && !el.querySelector('.msp').hidden;
+  const txt = !set.size ? label+': todos' : (set.size===1 ? label+': '+[...set][0] : label+': '+set.size+' seleccionados');
+  el.classList.toggle('on', set.size>0);
+  el.innerHTML='<button type="button" class="msb" aria-haspopup="true">'+esc(txt)+'</button><div class="msp"'+(open?'':' hidden')+'><div class="msa"><button type="button" class="link" data-all="1">Todos</button><button type="button" class="link" data-none="1">Ninguno</button></div>'
+    +opts.map(o=>'<label class="opt"><input type="checkbox" value="'+esc(o.v)+'"'+(set.has(o.v)?' checked':'')+'> <span>'+esc(o.l)+'</span></label>').join('')+'</div>';
+}
+document.addEventListener('click', e=>{
+  if(!e.target.isConnected) return;
+  const ms=e.target.closest('.ms');
+  document.querySelectorAll('.ms .msp').forEach(p=>{ if(!ms || !ms.contains(p)) p.hidden=true; });
+  if(!ms) return;
+  const id=ms.id, set=MSEL[id];
+  if(e.target.closest('.msb')){ const p=ms.querySelector('.msp'); p.hidden=!p.hidden; return; }
+  if(e.target.closest('[data-all]')){ ms.querySelectorAll('.opt input').forEach(i=>set.add(i.value)); renderAvance(); return; }
+  if(e.target.closest('[data-none]')){ set.clear(); renderAvance(); return; }
+});
+document.addEventListener('change', e=>{ const i=e.target; const ms=i.closest && i.closest('.ms'); if(!ms || i.type!=='checkbox') return; const set=MSEL[ms.id]; if(i.checked) set.add(i.value); else set.delete(i.value); setTimeout(renderAvance,0); });
+function curFil(){ if(!$('vAvance') || $('vAvance').hidden) return null; return {b:msArr('avBloque'), c:msArr('avCanal'), f:msArr('avFase')}; }
+// Embalado: las cajas master no pasan por embalaje, salvo que vayan a provincia
+const esCajaMaster = u => /caja\s*master/i.test(M.bultos.get(u).fase||'');
+const esProvincia = u => !!M.bultos.get(u).prov;
+const pasaEmbalaje = u => !esCajaMaster(u) || esProvincia(u);
+const inFase = (u, fs) => !fs || !fs.length || fs.includes(M.bultos.get(u).faseCod);
+function fleteVisible(F, fl){ fl=fl||curFil(); if(!fl) return true; return (!fl.b.length||fl.b.includes(F.bloque)) && (!fl.c.length||fl.c.includes(F.canal)) && (!fl.f.length||fl.f.some(f=>!!F.tf[f])); }
+function avRow(F, fz){
+  const fl=curFil(), fs=(Array.isArray(fz)&&fz.length)?fz:(fl&&fl.f.length?fl.f:null);
+  const bl = fs ? F.bultos.filter(u=>inFase(u,fs)) : F.bultos;
+  const tk = fs ? fs.reduce((a,f)=>{ const o=F.tf[f]; if(o){ a.n+=o.n; a.ok+=o.ok; } return a; },{n:0,ok:0}) : {n:F.tareas, ok:F.tareasOk};
+  const pickPct = tk.n ? Math.round(tk.ok/tk.n*100) : 0;
+  const nb=bl.length, anc=bl.filter(u=>/^AND/i.test((M.bultos.get(u).ubi||''))).length;
+  const ancPct = nb ? Math.round(anc/nb*100) : 0;
+  const E=evalFlete(F.id), e=estadoFlete(F.id)[0], cc=bl.filter(u=>E.leidos.has(u)).length;
+  const cont = e==='cer' ? {v:'Cerrado '+cc+'/'+nb, cls:'st-ok', done:true, who:E.cierre.resp+' '+hhmm(E.cierre.t).slice(0,5)}
+    : e==='des' ? {v:'Cerrado c/ faltantes '+cc+'/'+nb, cls:'st-bad', done:true, who:E.cierre.resp}
+    : (cc ? {v:cc+'/'+nb+' bultos', cls: (cc===nb?'st-ok':'st-pro'), done:false, who:''} : {v:'Pendiente', cls:'st-pen', done:false, who:''});
+  const r={F, nb, pick:{pct:pickPct, done:pickPct===100, n:tk.n, ok:tk.ok}, cont, anc:{v: ancPct===100?'Anclado':(ancPct?ancPct+'% anclado':'Pendiente'), cls: ancPct===100?'st-ok':(ancPct?'st-pro':'st-pen'), done:nb>0&&ancPct===100}};
+  for(const st of STAGES) if(st.man) r[st.k]=manState(F.id, st);
+  { const m=r.aud; m.n=nb; m.c = m.done ? nb : 0; m.v = m.done ? 'Completo' : m.c+'/'+nb; }
+  { const m=r.emb, ne=bl.filter(pasaEmbalaje).length; m.n=ne; m.na=nb-ne; m.c = m.done ? ne : 0;
+    if(!ne){ m.v='No aplica'; m.cls='st-na'; m.done=true; m.who='solo cajas master'; } else m.v = m.done ? 'Completo' : m.c+'/'+ne; }
+  r.cont.n=nb; r.cont.c=cc; r.cont.mov=E.sacar.length;
+  r.anc.n=nb; r.anc.c=anc;
+  r.sit=sitState(F, bl);
+  r.mue={v:F.muelle||'Sin muelle', cls:F.muelle?'st-ok':'st-pen', done:!!F.muelle, who:''};
+  { const zm=bl.filter(u=>/muelle/i.test(M.bultos.get(u).zona||'')).length, ze=bl.filter(u=>/embal/i.test(M.bultos.get(u).zona||'')).length;
+    const zc=new Map(); bl.forEach(u=>{ const z=M.bultos.get(u).zona||'Sin zona'; zc.set(z,(zc.get(z)||0)+1); });
+    const ztxt = !nb ? '—' : (zc.size===1 ? [...zc.keys()][0] : [...zc.entries()].sort((a,b)=>b[1]-a[1]).map(([z,n])=>z+' ('+n+')').join(' · '));
+    r.zona={n:nb, c:zm, emb:ze, done:nb>0&&zm===nb, cls: nb&&zm===nb?'st-ok':(zm||ze?'st-pro':'st-pen'), v: ztxt, who:''}; }
+  r.allDone = STAGES.every(st=> st.k==='pick' ? r.pick.done : r[st.k].done);
+  return r;
+}
+function renderAvance(){
+  const rows=[...M.fletes.values()].filter(F=>fleteVisible(F)).map(avRow);
+  setTimeout(renderBD,0);
+  { const f=(ST.bd&&ST.bd.faltan)||[]; $('avWarn').hidden=!f.length || !M.fletes.size;
+    if(f.length) $('avWarn').innerHTML='El reporte guardado no tiene la columna <b>'+f.join('</b> ni <b>')+'</b>'+(f.includes('Zona')?' (la Zona se calculó con la ubicación AND)':'')+'. '+(CFG?'Publica de nuevo el REPORTE desde Contabilizado → Coordinadora.':'Vuelve a cargar el REPORTE en Contabilizado → Coordinadora → <b>Cargar reporte</b>.'); }
+  $('avSrc').textContent = M.fletes.size ? (ST.bd.fecha?ST.bd.fecha+' · ':'')+M.fletes.size+' transportes · '+M.bultos.size+' bultos · reporte '+ST.bd.name : 'Sin reporte del turno';
+  $('avStages').innerHTML = STAGES.filter(st=>st.k!=='mue').map(st=>{
+    const bulto = ['aud','emb','cont','anc','zona'].includes(st.k);
+    let n, tot;
+    if(bulto){ n=rows.reduce((a,r)=>a+r[st.k].c,0); tot=rows.reduce((a,r)=>a+r[st.k].n,0); }
+    else { n=rows.filter(r=> st.k==='pick'?r.pick.done:r[st.k].done).length; tot=rows.length; }
+    const pen=tot-n, full=tot>0&&pen===0;
+    const word = bulto ? ({aud:'auditados', emb:'embalados', cont:'contados', anc:'anclados', zona:'en muelle'})[st.k] : (st.k==='mue' ? 'con muelle' : (st.k==='fij'?'fijados':(st.k==='sit'?'en muelle':'pickeados')));
+    return '<button type="button" class="bk" data-info="stg" data-arg="'+st.k+'"><div class="h">'+st.l+'<span class="u2">'+(st.k==='emb'?'por bulto · sin cajas master':(bulto?'por bulto':'por transporte'))+'</span></div><div class="n">'+n+'<small> / '+tot+'</small></div><div class="s '+(full?'ok':'pen')+'">'+n+' '+word+' · '+pen+' pendientes</div><div class="p'+(full?'':' pen')+'">'+f1(pct(n,tot))+' completado</div></button>'; }).join('');
+  const sel=(id, vals, label)=>{ const cur=$(id).value; $(id).innerHTML='<option value="">'+label+': todos</option>'+vals.map(v=>'<option'+(v===cur?' selected':'')+'>'+esc(v)+'</option>').join(''); };
+  { const all=bdTasks();
+    msRender('avBloque', [...new Set(all.map(x=>x.bloque).filter(Boolean))].sort().map(v=>({v,l:v})));
+    msRender('avCanal', [...new Set(all.map(x=>x.canal).filter(Boolean))].sort().map(v=>({v,l:v})));
+    const fm=new Map(); all.forEach(x=>{ if(x.fase && !fm.has(x.fase)) fm.set(x.fase, x.fdesc); });
+    msRender('avFase', [...fm.entries()].sort((a,b)=>a[0].localeCompare(b[0],'es',{numeric:true})).map(([f,dd])=>({v:f, l:f+' · '+dd})));
+    const act=[['Bloque',msArr('avBloque')],['Canal',msArr('avCanal')],['Fase',msArr('avFase')]].filter(x=>x[1].length);
+    $('avClear').hidden=!act.length; $('avFilTxt').textContent = act.length ? 'Mostrando: '+act.map(x=>x[0]+' '+x[1].join(', ')).join(' · ') : 'Mostrando todo el turno'; }
+  const q=norm($('avQ').value), ff=$('avFiltro').value;
+  const list=rows.filter(r=>(!q||r.F.id.includes(q)) && (!ff || (ff==='done'?r.allDone:!r.allDone)))
+    .sort((a,b)=>(a.F.bloque||'').localeCompare(b.F.bloque||'') || a.F.id.localeCompare(b.F.id));
+  const bcell=(x, k, fl)=>{ const w=x.n?Math.round(x.c/x.n*100):0;
+    if(k==='emb' && !x.n) return '<td><button type="button" class="bp st-na" data-det="emb" data-fl="'+esc(fl)+'" title="Ver detalle"><span class="top">No aplica</span><small>solo cajas master</small></button></td>';
+    const lbl = k==='cont' ? (x.done ? x.v : x.c+'/'+x.n) : (k==='anc' ? x.c+'/'+x.n : (k==='zona' ? x.c+'/'+x.n : x.v));
+    return '<td><button type="button" class="bp '+x.cls+'" data-det="'+k+'" data-fl="'+esc(fl)+'" title="Ver detalle por bulto"><span class="top">'+esc(lbl)+(k!=='cont'||!x.done?'<span>'+w+'%</span>':'')+'</span><span class="mini"><i style="width:'+w+'%"></i></span>'+(x.who?'<small>'+esc(x.who)+'</small>':(x.mov?'<small>'+x.mov+' por sacar</small>':''))+'</button></td>'; };
+  const mcell=(x, k, fl)=>'<td><button type="button" class="st '+x.cls+'" data-det="'+k+'" data-fl="'+esc(fl)+'" title="Ver detalle">'+esc(x.v)+(x.who?'<small>'+esc(x.who)+'</small>':'')+'</button></td>';
+  const cell=(x, st, fl)=> st && st.man
+    ? '<td><button type="button" class="st '+x.cls+'" data-st="'+st.k+'" data-fl="'+esc(fl)+'" title="Tocar para cambiar">'+esc(x.v)+(x.who?'<small>'+esc(x.who)+'</small>':'')+'</button></td>'
+    : '<td><span class="st '+x.cls+'">'+esc(x.v)+(x.who?'<small>'+esc(x.who)+'</small>':'')+'</span></td>';
+  $('avBody').innerHTML = list.map(r=>'<tr><td class="tx"><button type="button" class="lk" data-grp="bloque|'+esc(r.F.bloque||'')+'" title="Ver detalle">'+esc(r.F.bloque||'—')+'</button></td><td class="tx"><button type="button" class="lk" data-grp="canal|'+esc(r.F.canal||'')+'" title="Ver detalle">'+esc(r.F.canal||'—')+'</button></td><td class="flc"><button type="button" class="lk" data-tr="'+esc(r.F.id)+'" title="Ver detalle">'+esc(nomFl(r.F.id))+'</button></td><td><button type="button" class="st '+r.mue.cls+'" data-det="mue" data-fl="'+esc(r.F.id)+'" style="text-align:center;align-items:center" title="Ver detalle">'+esc(r.mue.v)+'</button></td>'
+    +'<td><div class="pk"><span class="bar"><i style="width:'+r.pick.pct+'%"></i></span><b>'+r.pick.pct+'%</b></div></td>'
+    +bcell(r.aud,'aud',r.F.id)+bcell(r.emb,'emb',r.F.id)+bcell(r.cont,'cont',r.F.id)+bcell(r.anc,'anc',r.F.id)+mcell(r.fij,'fij',r.F.id)+mcell(r.sit,'sit',r.F.id)+'</tr>').join('')
+    || '<tr><td colspan="11" class="empty">'+(M.fletes.size?'Ningún transporte coincide con el filtro.':'Aún no hay reporte del turno.')+'</td></tr>';
+}
+/* ---------- picking según hoja BD ---------- */
+function bdTasks(){
+  const ix={}; KCOLS.forEach((n,i)=>{ for(const k in C) if(C[k]===n) ix[k]=i; });
+  const g=(r,k)=>String(r[ix[k]]??'').trim();
+  const out=[];
+  for(const r of (ST.bd&&ST.bd.rows)||[]){
+    const st=g(r,'status'); if(/^\(/.test(st)) continue;
+    const doc=norm(g(r,'doc')); if(!doc) continue;
+    out.push({st, done: st==='C'||st==='A', neg: st==='A', prod:g(r,'prod'), desc:g(r,'desc'), qty:g(r,'qty'), um:g(r,'um'), conf:g(r,'conf'), ump:norm(g(r,'ump')), oa:g(r,'oa'), doc, fo:norm(g(r,'flete'))||'SINFLETE', fase:g(r,'fase'), fdesc:g(r,'fdesc'), bloque:g(r,'bloque'), canal:g(r,'canal')});
+  }
+  return out;
+}
+function bdScope(ts){
+  const oa=new Map(), doc=new Map(), fo=new Map();
+  for(const x of ts){ const o=oa.get(x.oa)||{ok:true}; o.ok=o.ok&&x.done; oa.set(x.oa,o);
+    const dd=doc.get(x.doc)||{oas:new Set(), fo:x.fo}; dd.oas.add(x.oa); doc.set(x.doc,dd);
+    const f=fo.get(x.fo)||new Set(); f.add(x.doc); fo.set(x.fo,f); }
+  const docOk=new Map(); for(const [k,v] of doc) docOk.set(k, [...v.oas].every(o=>oa.get(o).ok));
+  const foOk=[...fo.values()].filter(s=>[...s].every(dn=>docOk.get(dn))).length;
+  const tOk=ts.filter(x=>x.done).length, neg=ts.filter(x=>x.neg).length;
+  return {t:{n:ts.length, ok:tOk}, neg, oa:{n:oa.size, ok:[...oa.values()].filter(o=>o.ok).length}, doc:{n:doc.size, ok:[...docOk.values()].filter(Boolean).length}, fo:{n:fo.size, ok:foOk}};
+}
+function bdBultos(ts){
+  const m=new Map();
+  for(const x of ts){ if(!x.ump) continue; const b=m.get(x.ump)||{ump:x.ump, fases:new Set(), docs:new Set(), fo:x.fo, n:0, ok:0, und:0, prods:new Set()};
+    b.fases.add(x.fase); b.docs.add(x.doc); b.n++; if(x.done) b.ok++; b.und+=(+String(x.qty).replace(/,/g,'')||0); b.prods.add(x.prod); m.set(x.ump,b); }
+  for(const b of m.values()) b.comp=b.ok===b.n;
+  return m;
+}
+const pct=(a,b)=> b ? (a/b*100) : 0;
+const f1=x=>x.toFixed(1)+'%', f2=x=>x.toFixed(2)+'%';
+function renderBD(){
+  const fb=msArr('avBloque'), fc=msArr('avCanal');
+  const fz=msArr('avFase'); const ts=bdTasks().filter(x=>(!fb.length||fb.includes(x.bloque)) && (!fc.length||fc.includes(x.canal)) && (!fz.length||fz.includes(x.fase)));
+  const S=bdScope(ts);
+  const card=(h, n, ok, word, kind)=>{ const pen=n-ok, full=n>0&&pen===0;
+    return '<button type="button" class="bk" data-info="'+kind+'"><div class="h">'+h+'</div><div class="n">'+n+'</div><div class="s '+(full?'ok':'pen')+'">'+ok+' '+word+' · '+pen+' pendientes</div><div class="p'+(full?'':' pen')+'">'+f1(pct(ok,n))+' completado</div></button>'; };
+  $('bdKpis').innerHTML = !ts.length ? '<div class="empty" style="grid-column:1/-1">Aún no hay reporte del turno.</div>' :
+    card('Órdenes de almacén', S.oa.n, S.oa.ok, 'completadas', 'oa')
+    + card('Tareas de almacén', S.t.n, S.t.ok, 'completadas', 'tareas')
+    + '<button type="button" class="bk" data-info="neg"><div class="h">Negados</div><div class="n'+(S.neg?' red':'')+'">'+S.neg+'</div><div class="s '+(S.neg?'pen':'ok')+'">'+S.neg+' negados · '+S.t.n+' tareas</div><div class="p'+(S.neg?' pen':'')+'">'+f2(pct(S.neg,S.t.n))+' tasa de negados</div></button>'
+    + card('Transportes (FO)', S.fo.n, S.fo.ok, 'completados', 'fo')
+    + card('Documentos (entregas)', S.doc.n, S.doc.ok, 'completos', 'doc')
+    + (()=>{ const B=bdBultos(ts), n=B.size, ok=[...B.values()].filter(b=>b.comp).length; return card('Bultos totales', n, ok, 'pickeados', 'bul'); })();
+  const groups=new Map();
+  for(const x of ts){ const k=[x.bloque,x.canal,x.fase,x.fdesc].join('|'); if(!groups.has(k)) groups.set(k,[]); groups.get(k).push(x); }
+  const keys=[...groups.keys()].sort((a,b)=>a.localeCompare(b,'es',{numeric:true}));
+  const row=(cells, s)=>{ const av=pct(s.t.ok,s.t.n); return cells+'<td class="av'+(av<100?' pen':'')+'">'+f1(av)+'</td><td>'+s.oa.ok+' / '+s.oa.n+'</td><td>'+s.t.ok+' / '+s.t.n+'</td><td class="neg">'+s.neg+' &nbsp;('+f2(pct(s.neg,s.t.n))+')</td><td>'+s.fo.ok+' / '+s.fo.n+'</td><td>'+s.doc.ok+' / '+s.doc.n+'</td>'; };
+  $('bdFase').innerHTML = keys.map(k=>{ const [b,c,f,fd]=k.split('|'); return '<tr data-fase="'+esc(k)+'">'+row('<td class="l"><b>'+esc(b||'—')+'</b></td><td class="l"><b>'+esc(c||'—')+'</b></td><td class="l">'+esc(f||'—')+'</td><td class="l">'+esc(fd||'—')+'</td>', bdScope(groups.get(k)))+'</tr>'; }).join('')
+    || '<tr><td colspan="10" class="empty">Sin tareas en el reporte.</td></tr>';
+  $('bdTot').innerHTML = ts.length ? '<tr data-info="oa">'+row('<td class="l" colspan="4">Total general</td>', S)+'</tr>' : '';
+  return {S, keys, groups};
+}
+
+/* ---------- detalle superpuesto (status de picking y etapas) ---------- */
+let IF=null;
+function bdIndex(ts){
+  const oa=new Map(), doc=new Map(), fo=new Map();
+  for(const x of ts){
+    const o=oa.get(x.oa)||{oa:x.oa, fase:x.fase, fdesc:x.fdesc, doc:x.doc, fo:x.fo, n:0, ok:0, neg:0}; o.n++; if(x.done) o.ok++; if(x.neg) o.neg++; oa.set(x.oa,o);
+    const dd=doc.get(x.doc)||{doc:x.doc, fo:x.fo, oas:new Set(), n:0, ok:0}; dd.oas.add(x.oa); dd.n++; if(x.done) dd.ok++; doc.set(x.doc,dd);
+    const f=fo.get(x.fo)||{fo:x.fo, docs:new Set(), oas:new Set(), n:0, ok:0}; f.docs.add(x.doc); f.oas.add(x.oa); f.n++; if(x.done) f.ok++; fo.set(x.fo,f);
+  }
+  for(const o of oa.values()) o.comp=o.ok===o.n;
+  for(const dd of doc.values()){ dd.oaOk=[...dd.oas].filter(a=>oa.get(a).comp).length; dd.comp=dd.oaOk===dd.oas.size; }
+  for(const f of fo.values()){ f.docOk=[...f.docs].filter(x=>doc.get(x).comp).length; f.oaOk=[...f.oas].filter(a=>oa.get(a).comp).length; f.comp=f.docOk===f.docs.size; }
+  return {oa, doc, fo};
+}
+const stp=(x, frac, txt)=>{ const c=x.cls==='st-na'?'p-mute':(x.done||x.cls==='st-ok'?'p-ok':(x.cls==='st-bad'?'p-bad':(x.cls==='st-pro'?'p-info':'p-warn'))); return '<span class="pill '+c+'" style="white-space:normal;text-transform:none;letter-spacing:0">'+esc(txt!=null?txt:(frac&&!x.done?x.c+'/'+x.n:x.v))+'</span>'; };
+const pillC=(c, okTxt, penTxt)=>'<span class="pill '+(c?'p-ok':'p-warn')+'">'+(c?okTxt:penTxt)+'</span>';
+function openInfo(kind, arg){ IF={kind, arg, fz:new Set()}; $('ifQ').value=''; renderInfo(); $('infoSheet').hidden=false; }
+function renderInfo(){
+  if(!IF) return;
+  const fb=msArr('avBloque'), fc=msArr('avCanal');
+  const fz=msArr('avFase'); let ts=bdTasks().filter(x=>(!fb.length||fb.includes(x.bloque)) && (!fc.length||fc.includes(x.canal)) && (!fz.length||fz.includes(x.fase)));
+  const {kind, arg}=IF; const q=$('ifQ').value.trim().toUpperCase();
+  IF.fz=IF.fz||new Set();
+  { const opts=new Map(); ts.forEach(x=>{ if(x.fase && !opts.has(x.fase)) opts.set(x.fase, x.fdesc); });
+    if(kind==='tr'){ const F0=M.fletes.get(arg); if(F0){ for(const c of [...opts.keys()]) if(!F0.tf[c]) opts.delete(c); } }
+    for(const c of [...IF.fz]) if(!opts.has(c)) IF.fz.delete(c);
+    const ks=[...opts.keys()].sort();
+    $('ifFz').innerHTML = (kind==='fase' || ks.length<2) ? '' : '<span class="lb">Fase</span><button type="button" data-fz="" class="'+(IF.fz.size?'':'on')+'" aria-pressed="'+(!IF.fz.size)+'">Todas</button>'+ks.map(c=>'<button type="button" data-fz="'+esc(c)+'" class="'+(IF.fz.has(c)?'on':'')+'" aria-pressed="'+IF.fz.has(c)+'" title="'+esc(opts.get(c)||'')+'">'+esc(c)+'<small>'+esc(opts.get(c)||'')+'</small></button>').join(''); }
+  const IFZ=[...IF.fz];
+  if(IFZ.length) ts=ts.filter(x=>IF.fz.has(x.fase));
+  const fzOk=F=>!IFZ.length || IFZ.some(c=>!!F.tf[c]);
+  const avR=F=>avRow(F, IFZ);
+  const FD=new Map(); bdTasks().forEach(x=>{ if(x.fase && !FD.has(x.fase)) FD.set(x.fase, x.fdesc); });
+  const FZ={fo:new Map(), doc:new Map()}; ts.forEach(x=>{ for(const k of ['fo','doc']){ const s=FZ[k].get(x[k])||new Set(); s.add(x.fase); FZ[k].set(x[k], s); } });
+  const fzList=codes=>[...codes].filter(c=>c&&c!=='—').sort();
+  const fzTxt=codes=>fzList(codes).map(c=>c+' '+(FD.get(c)||'')).join(' ');
+  const fzCell=codes=>{ const l=fzList(codes); return '<td class="fz">'+(l.map(c=>'<div><b>'+esc(c)+'</b> <span class="small muted">'+esc(FD.get(c)||'')+'</span></div>').join('')||'—')+'</td>'; };
+  const fzF=F=>{ const fl=curFil(), fs=IFZ.length?IFZ:(fl&&fl.f.length?fl.f:null); return Object.keys(F.tf).filter(c=>!fs||fs.includes(c)); };
+  const hit=(...v)=>!q || v.some(s=>String(s||'').toUpperCase().includes(q));
+  let sub='Status de picking', title='', head='', thead='', body=[], foot='';
+  if(kind==='fase'){ const [b,c,f,fd]=arg.split('|'); ts=ts.filter(x=>[x.bloque,x.canal,x.fase,x.fdesc].join('|')===arg); sub='Fase '+f+' · '+b+' · '+c; title=fd||('Fase '+f); }
+  const I=bdIndex(ts), S=bdScope(ts);
+  const kp=(l,v)=>'<div class="kpi"><div class="n" style="font-size:1.3rem">'+v+'</div><div class="l">'+l+'</div></div>';
+  const BU=bdBultos(ts), buOk=[...BU.values()].filter(b=>b.comp).length;
+  const kpis='<div class="sg kp6">'+kp('OA compl.',S.oa.ok+'/'+S.oa.n)+kp('Tareas compl.',S.t.ok+'/'+S.t.n)+kp('Negados',S.neg)+kp('FO compl.',S.fo.ok+'/'+S.fo.n)+kp('Docs compl.',S.doc.ok+'/'+S.doc.n)+kp('Bultos pick.',buOk+'/'+BU.size)+'</div>';
+  const oaTable=()=>{ thead='<tr><th>OA</th><th>Fase</th><th>Entrega</th><th>Transporte</th><th style="text-align:right">Tareas</th><th>Estado</th></tr>';
+    body=[...I.oa.values()].filter(o=>hit(o.oa,o.doc,o.fo,o.fase,o.fdesc)).sort((a,b)=>(a.comp-b.comp)||a.oa.localeCompare(b.oa))
+      .map(o=>'<tr class="clk" data-fo="'+esc(o.fo)+'"><td class="c">'+esc(o.oa)+'</td><td>'+esc(o.fase)+' <span class="small muted">'+esc(o.fdesc)+'</span></td><td class="c">'+esc(o.doc)+'</td><td class="c">'+esc(nomFl(o.fo))+'</td><td class="n">'+o.ok+'/'+o.n+(o.neg?' <span style="color:var(--bad)">('+o.neg+' neg.)</span>':'')+'</td><td>'+pillC(o.comp,'Completada','Pendiente')+'</td></tr>'); };
+  const taskTable=(only)=>{ thead='<tr><th>OA</th><th>Fase</th><th>Producto</th><th>Descripción</th><th style="text-align:right">Cant.</th><th>Status</th><th>Confirmado por</th><th>UMp</th></tr>';
+    body=ts.filter(x=>(!only||only(x)) && hit(x.oa,x.prod,x.desc,x.conf,x.ump,x.doc,x.fase,x.fdesc)).sort((a,b)=>(a.done-b.done)||a.oa.localeCompare(b.oa))
+      .map(x=>'<tr><td class="c">'+esc(x.oa)+'</td>'+fzCell([x.fase])+'<td class="c">'+esc(x.prod)+'</td><td>'+esc(x.desc)+'</td><td class="n">'+esc(x.qty)+' '+esc(x.um)+'</td><td>'+(x.neg?'<span class="pill p-bad">A · negada</span>':x.done?'<span class="pill p-ok">C</span>':'<span class="pill p-warn">'+esc(x.st||'abierta')+'</span>')+'</td><td>'+esc(x.conf||'—')+'</td><td class="c">'+(x.ump&&M.bultos.has(x.ump)?'<span class="uc" data-ump="'+x.ump+'" style="text-decoration:underline dotted;cursor:pointer">'+x.ump+'</span>':esc(x.ump||'—'))+'</td></tr>'); };
+  if(kind==='oa'){ title='Órdenes de almacén'; head=kpis; oaTable(); }
+  else if(kind==='fase'){ head=kpis; oaTable(); }
+  else if(kind==='tareas'){ title='Tareas de almacén'; head=kpis; taskTable(); }
+  else if(kind==='neg'){ title='Negados'; head='<div class="note">'+(S.neg?S.neg+' tareas negadas (status A) de '+S.t.n+' · tasa '+f2(pct(S.neg,S.t.n)):'No hay tareas negadas en el reporte.')+'</div>'; taskTable(x=>x.neg); }
+  else if(kind==='fo'){ title='Transportes (FO)'; head=kpis+'<div class="small muted">Toca un transporte para ver sus bultos.</div>';
+    thead='<tr><th>Transporte</th><th>Fase</th><th style="text-align:right">Entregas</th><th style="text-align:right">OA</th><th style="text-align:right">Tareas</th><th>Estado</th></tr>';
+    body=[...I.fo.values()].filter(f=>hit(f.fo, fzTxt(FZ.fo.get(f.fo)||[]))).sort((a,b)=>(a.comp-b.comp)||a.fo.localeCompare(b.fo))
+      .map(f=>'<tr class="clk" data-fo="'+esc(f.fo)+'"><td class="c">'+esc(nomFl(f.fo))+'</td>'+fzCell(FZ.fo.get(f.fo)||[])+'<td class="n">'+f.docOk+'/'+f.docs.size+'</td><td class="n">'+f.oaOk+'/'+f.oas.size+'</td><td class="n">'+f.ok+'/'+f.n+'</td><td>'+pillC(f.comp,'Completado','Pendiente')+'</td></tr>'); }
+  else if(kind==='doc'){ title='Documentos (entregas)'; head=kpis;
+    thead='<tr><th>Entrega</th><th>Transporte</th><th>Fase</th><th style="text-align:right">OA</th><th style="text-align:right">Tareas</th><th>Estado</th></tr>';
+    body=[...I.doc.values()].filter(x=>hit(x.doc,x.fo, fzTxt(FZ.doc.get(x.doc)||[]))).sort((a,b)=>(a.comp-b.comp)||a.doc.localeCompare(b.doc))
+      .map(x=>'<tr class="clk" data-fo="'+esc(x.fo)+'"><td class="c">'+esc(x.doc)+'</td><td class="c">'+esc(nomFl(x.fo))+'</td>'+fzCell(FZ.doc.get(x.doc)||[])+'<td class="n">'+x.oaOk+'/'+x.oas.size+'</td><td class="n">'+x.ok+'/'+x.n+'</td><td>'+pillC(x.comp,'Completo','Pendiente')+'</td></tr>'); }
+  else if(kind==='grp'){ const i=arg.indexOf('|'), campo=arg.slice(0,i), val=arg.slice(i+1);
+    sub=(campo==='bloque'?'Bloque':'Canal')+' · transportes'; title=val||'(vacío)';
+    const rows=[...M.fletes.values()].filter(F=>fleteVisible(F) && fzOk(F) && (F[campo]||'')===val).map(avR);
+    const sum=k=>rows.reduce((a,r)=>a+r[k].c,0), tot=k=>rows.reduce((a,r)=>a+r[k].n,0);
+    const tk=rows.reduce((a,r)=>{a.n+=r.pick.n; a.ok+=r.pick.ok; return a;},{n:0,ok:0});
+    const nb=rows.reduce((a,r)=>a+r.nb,0);
+    head='<div class="sg" style="grid-template-columns:repeat(6,minmax(0,1fr))">'+kp('Transportes',rows.length)+kp('Bultos',nb)+kp('Pickeado',f1(pct(tk.ok,tk.n)))+kp('Contados',sum('cont')+'/'+nb)+kp('Anclados',sum('anc')+'/'+nb)+kp('Fijados',rows.filter(r=>r.fij.done).length+'/'+rows.length)+'</div>'
+      +'<div class="small muted">Toca un transporte para ver su detalle completo.'+(curFil()&&(curFil().b.length||curFil().c.length||curFil().f.length)?' Respeta los filtros activos.':'')+'</div>';
+    thead='<tr><th>Transporte</th><th>Fase</th>'+(campo==='bloque'?'<th>Canal</th>':'<th>Bloque</th>')+'<th>Muelle</th><th style="text-align:right">Bultos</th><th>Pickeado</th><th>Auditado</th><th>Embalado</th><th>Contabilizado</th><th>Anclado</th><th>Fijado</th><th>En sitio</th></tr>';
+    body=rows.filter(r=>hit(r.F.id,r.F.muelle,r.F.canal,r.F.bloque,fzTxt(fzF(r.F)))).sort((a,b)=>a.F.id.localeCompare(b.F.id))
+      .map(r=>'<tr class="clk" data-tr="'+esc(r.F.id)+'"><td class="c">'+esc(nomFl(r.F.id))+'</td>'+fzCell(fzF(r.F))+'<td>'+esc((campo==='bloque'?r.F.canal:r.F.bloque)||'—')+'</td><td>'+stp(r.mue)+'</td><td class="n">'+r.nb+'</td><td>'+stp({v:r.pick.pct+'%',done:r.pick.done,cls:r.pick.done?'st-ok':(r.pick.pct?'st-pro':'st-pen')})+'</td><td>'+stp(r.aud)+'</td><td>'+stp(r.emb)+'</td><td>'+stp(r.cont)+'</td><td>'+stp(r.anc,true)+'</td><td>'+stp(r.fij)+'</td><td>'+stp(r.sit)+'</td></tr>'); }
+  else if(kind==='tr'){ const F=M.fletes.get(arg); if(!F){ $('infoSheet').hidden=true; IF=null; return; }
+    const r=avR(F), E=evalFlete(F.id), fl=curFil(), fs=IFZ.length?IFZ:(fl&&fl.f.length?fl.f:null);
+    sub='Transporte · '+(F.bloque||'—')+' · '+(F.canal||'—')+' · Fase '+(fzList(fzF(F)).join(', ')||'—'); title=nomFl(F.id);
+    const chip=(k,l,x,txt)=>'<button type="button" class="chip'+(k?'':' nc')+'"'+(k?' data-stg="'+k+'" data-fl="'+esc(F.id)+'"':'')+'><span class="h">'+l+'</span><span class="v">'+stp(x,false,txt)+'</span></button>';
+    head='<div class="chips">'+chip('mue','Muelle',r.mue)+chip('','Pickeado',{done:r.pick.done,cls:r.pick.done?'st-ok':(r.pick.pct?'st-pro':'st-pen')},r.pick.pct+'% · '+r.pick.ok+'/'+r.pick.n+' tareas')+chip('aud','Auditado',r.aud)+chip('emb','Embalado',r.emb)+chip('cont','Contabilizado',r.cont)+chip('anc','Anclado',r.anc,r.anc.c+'/'+r.anc.n)+chip('fij','Fijado',r.fij)+chip('sit','En sitio',r.sit,r.sit.v+(r.sit.who&&r.sit.v!=='Pendiente'?' · '+r.sit.who:''))+'</div>'
+      +'<div class="small muted">'+F.ents.length+' entregas · '+r.nb+' bultos'+(fs?' (fase filtrada)':'')+' · toca una etapa para su detalle o una UMp para ver lo que contiene.</div>';
+    thead='<tr><th>UMp</th><th>Entrega</th><th>Fase</th><th>Ubicación</th><th>Anclado</th><th>Contabilizado</th></tr>';
+    const bl=fs?F.bultos.filter(u=>inFase(u,fs)):F.bultos;
+    body=bl.map(u=>M.bultos.get(u)).filter(b=>hit(b.ump,b.entrega,b.fase,b.ubi)).sort((a,b)=>(a.entrega+a.ump).localeCompare(b.entrega+b.ump))
+      .map(b=>{ const an=/^AND/i.test(b.ubi||''), ct=E.leidos.has(b.ump), s=SC.get(b.ump);
+        return '<tr><td class="c"><span class="uc" data-ump="'+esc(b.ump)+'" style="text-decoration:underline dotted;cursor:pointer">'+esc(b.ump)+'</span></td><td class="c">'+esc(b.entrega)+'</td><td>'+esc(b.fase||'—')+'</td><td class="c">'+esc(b.ubi||'—')+'</td><td>'+(an?'<span class="pill p-ok">Sí</span>':'<span class="pill p-warn">No</span>')+'</td><td>'+(ct?'<span class="pill p-ok">Contado</span>'+(s&&s.op?' <span class="small muted">'+esc(s.op)+' '+hhmm(s.t).slice(0,5)+'</span>':''):'<span class="pill p-warn">Pendiente</span>')+'</td></tr>'; }); }
+  else if(kind==='bul'){ title='Bultos totales'; head=kpis+'<div class="small muted">Toca una UMp para ver lo que contiene, o la fila para ver el transporte.</div>';
+    thead='<tr><th>UMp</th><th>Fase</th><th>Entrega</th><th>Transporte</th><th style="text-align:right">Productos</th><th style="text-align:right">Unidades</th><th>Ubicación</th><th style="text-align:right">Tareas</th><th>Estado</th></tr>';
+    body=[...BU.values()].filter(b=>hit(b.ump,b.fo,[...b.docs].join(' '),fzTxt(b.fases),(M.bultos.get(b.ump)||{}).ubi)).sort((a,b)=>(a.comp-b.comp)||a.fo.localeCompare(b.fo)||a.ump.localeCompare(b.ump))
+      .map(b=>{ const mb=M.bultos.get(b.ump); return '<tr class="clk" data-tr="'+esc(b.fo)+'"><td class="c">'+(mb?'<span class="uc" data-ump="'+esc(b.ump)+'" style="text-decoration:underline dotted;cursor:pointer">'+esc(b.ump)+'</span>':esc(b.ump))+'</td>'+fzCell(b.fases)+'<td class="c">'+esc([...b.docs].join(', '))+'</td><td class="c">'+esc(nomFl(b.fo))+'</td><td class="n">'+b.prods.size+'</td><td class="n">'+b.und+'</td><td class="c">'+esc((mb&&mb.ubi)||'—')+'</td><td class="n">'+b.ok+'/'+b.n+'</td><td>'+pillC(b.comp,'Pickeado','Pendiente')+'</td></tr>'; }); }
+  else if(kind==='stg'){ const st=STAGES.find(s=>s.k===arg); sub='Etapas por transporte'; title=st.l;
+    const rows=[...M.fletes.values()].filter(F=>fleteVisible(F) && fzOk(F)).map(avR);
+    const val=r=> st.k==='pick' ? {v:r.pick.pct+'%', done:r.pick.done, cls:r.pick.done?'st-ok':'st-pro', who:''} : r[st.k];
+    const n=rows.filter(r=>val(r).done).length;
+    const bulto=['aud','emb','cont','anc','zona'].includes(st.k);
+    const bc=rows.reduce((a,r)=>a+(bulto?r[st.k].c:0),0), bt=rows.reduce((a,r)=>a+(bulto?r[st.k].n:0),0);
+    head='<div class="small">'+(bulto?'<b>'+bc+'</b> de '+bt+' bultos ('+f1(pct(bc,bt))+') · ':'')+'<b>'+n+'</b> de '+rows.length+' transportes completos · toca un transporte para ver el detalle</div>';
+    thead='<tr><th>Transporte</th><th>Fase</th><th>Bloque</th><th>Canal</th>'+(bulto?'<th style="text-align:right">Bultos</th>':'')+'<th>'+st.l+'</th><th>Registrado por</th></tr>';
+    body=rows.filter(r=>hit(r.F.id, fzTxt(fzF(r.F)))).sort((a,b)=>(val(a).done-val(b).done)||a.F.id.localeCompare(b.F.id))
+      .map(r=>{ const x=val(r); const det=st.k!=='pick'; return '<tr class="'+(det?'clk':'')+'"'+(det?' data-stg="'+st.k+'" data-fl="'+esc(r.F.id)+'"':' data-fo="'+esc(r.F.id)+'"')+'><td class="c">'+esc(nomFl(r.F.id))+'</td>'+fzCell(fzF(r.F))+'<td>'+esc(r.F.bloque||'—')+'</td><td>'+esc(r.F.canal||'—')+'</td>'+(bulto?'<td class="n">'+x.c+'/'+x.n+'</td>':'')+'<td><span class="pill '+(x.done?'p-ok':(x.cls==='st-pro'?'p-info':'p-warn'))+'">'+esc(st.k==='cont'&&!x.done?(x.c+'/'+x.n+' bultos'):((st.k==='anc'||st.k==='zona')&&!x.done?(x.c+'/'+x.n+' bultos'):x.v))+'</span></td><td>'+esc(x.who||'—')+'</td></tr>'; }); }
+  $('ifSub').textContent=sub; $('ifTitle').textContent=title; $('ifHead').innerHTML=head;
+  $('ifTable').innerHTML='<thead>'+thead+'</thead><tbody>'+(body.join('')||'<tr><td colspan="12" class="empty">Sin resultados.</td></tr>')+'</tbody>';
+  $('ifFoot').textContent=body.length+' fila'+(body.length!==1?'s':'');
+}
+$('ifQ').addEventListener('input', renderInfo);
+$('ifFz').addEventListener('click', e=>{ const b=e.target.closest('button[data-fz]'); if(!b||!IF) return; const c=b.dataset.fz;
+  if(!c) IF.fz.clear(); else if(IF.fz.has(c)) IF.fz.delete(c); else IF.fz.add(c); renderInfo(); });
+$('ifClose').addEventListener('click', ()=>{ $('infoSheet').hidden=true; IF=null; });
+$('infoSheet').addEventListener('click', e=>{
+  if(e.target.id==='infoSheet'){ $('infoSheet').hidden=true; IF=null; return; }
+  const s=e.target.closest('[data-stg]'); if(s){ openStage(s.dataset.stg, s.dataset.fl); return; }
+  const tr=e.target.closest('[data-tr]'); if(tr){ openInfo('tr', tr.dataset.tr); return; }
+  const f=e.target.closest('[data-fo]'); if(f && !e.target.closest('[data-ump]') && M.fletes.has(f.dataset.fo)){ openStage('cont', f.dataset.fo); }
+});
+$('bdKpis').addEventListener('click', e=>{ const b=e.target.closest('[data-info]'); if(b) openInfo(b.dataset.info); });
+$('avStages').addEventListener('click', e=>{ const b=e.target.closest('[data-info]'); if(b) openInfo('stg', b.dataset.arg); });
+$('bdFase').addEventListener('click', e=>{ const r=e.target.closest('tr[data-fase]'); if(r) openInfo('fase', r.dataset.fase); });
+$('bdTot').addEventListener('click', ()=>openInfo('oa'));
+
+let SG=null;
+function openStage(k, fl){ SG={k, fl}; renderStage(); $('stageSheet').hidden=false; }
+function renderStage(){
+  if(!SG) return; const {k, fl}=SG; const F=M.fletes.get(fl); if(!F){ $('stageSheet').hidden=true; return; }
+  const st=STAGES.find(s=>s.k===k), E=evalFlete(fl), r=avRow(F), x=r[k];
+  $('sgSub').textContent=st.l+' · transporte'; $('sgTitle').textContent=nomFl(fl);
+  let html='';
+  if(st.man && !st.bul){
+    const hist=allEvents().filter(e=>e.tipo==='estado' && e.flete===fl && e.codigo===k).reverse();
+    html+='<div class="sg" style="grid-template-columns:repeat(3,minmax(0,1fr))"><div class="kpi '+(x.done?'ok':'warn')+'"><div class="n">'+esc(x.v)+'</div><div class="l">'+st.l+' · estado actual</div></div><div class="kpi"><div class="n">'+E.leidos.size+'/'+F.bultos.length+'</div><div class="l">Bultos contados</div></div><div class="kpi"><div class="n">'+r.anc.c+'/'+r.anc.n+'</div><div class="l">Bultos anclados</div></div></div>';
+    if(k==='sit') html+='<div class="note">'+(x.auto?'Estado automático: ':'Marcado a mano por '+esc(x.who)+'. ')+'SAP: <b>'+x.nA+'</b> bultos en AND · <b>'+x.nP+'</b> en PEMB-SALIDA de '+x.n+'.'+(x.ec?' Canal e-commerce: aunque esté en AND se considera en embalaje hasta que el operario lo marque En muelle.':' PEMB-SALIDA = en embalaje · AND = en muelle.')+' «Pendiente» vuelve al estado automático.</div>';
+    html+='<div class="small">Este control es por transporte. Marca el estado:</div><div class="row">'+st.man.map(v=>'<button type="button" class="'+(v===(k==='sit'?manState(fl,st).v:x.v)?'primary':'')+'" data-set="'+esc(v)+'">'+esc(v)+'</button>').join('')+'</div>';
+    html+='<div class="egrp"><div class="eh"><span><b>Historial</b></span><span>'+hist.length+'</span></div>'+(hist.map(e=>'<div class="urow"><span class="dot" style="background:var(--accent)"></span><span>'+esc(e.resultado)+'</span><span class="muted small">'+fechaHora(+e.ts)+'</span><span class="who">'+esc(e.operario||'—')+'</span></div>').join('')||'<div class="urow"><span></span><span class="muted">Sin cambios registrados.</span></div>')+'</div>';
+    html+='<div class="small muted">Entregas del transporte: '+F.ents.length+' · '+F.bultos.length+' bultos</div>';
+    $('sgBody').innerHTML=html;
+    $('sgBody').querySelectorAll('[data-set]').forEach(b=>b.onclick=()=>{ emit('estado', fl, {codigo:k, resultado:b.dataset.set}); toast(st.l+' de '+fl+': '+b.dataset.set); renderStage(); renderAvance(); });
+    return;
+  }
+  if(k==='mue'){
+    html+='<div class="sg" style="grid-template-columns:repeat(3,minmax(0,1fr))"><div class="kpi '+(F.muelle?'ok':'warn')+'"><div class="n">'+esc(F.muelle||'Sin muelle')+'</div><div class="l">Muelle asignado</div></div><div class="kpi"><div class="n">'+r.nb+'</div><div class="l">Bultos SAP</div></div><div class="kpi"><div class="n">'+F.ents.length+'</div><div class="l">Entregas</div></div></div>';
+    html+='<div class="small muted">Sale de la columna Muelle de la hoja BD.</div>';
+  }
+  else if(k==='anc'){
+    html+='<div class="sg" style="grid-template-columns:repeat(3,minmax(0,1fr))"><div class="kpi"><div class="n">'+r.anc.n+'</div><div class="l">Bultos SAP</div></div><div class="kpi ok"><div class="n">'+r.anc.c+'</div><div class="l">Anclados (ubicación AND)</div></div><div class="kpi warn"><div class="n">'+(r.anc.n-r.anc.c)+'</div><div class="l">Pendientes</div></div></div>';
+    html+='<div class="small muted">Sale de la hoja BD: una UMp está anclada cuando su ubicación destino es AND.</div>';
+  }
+  else if(k==='cont'){
+    html+='<div class="sg"><div class="kpi"><div class="n">'+F.bultos.length+'</div><div class="l">Bultos SAP</div></div><div class="kpi ok"><div class="n">'+E.leidos.size+'</div><div class="l">Contados</div></div><div class="kpi warn"><div class="n">'+E.faltan.length+'</div><div class="l">Faltan</div></div><div class="kpi bad"><div class="n">'+E.sacar.length+'</div><div class="l">Por sacar</div></div></div>';
+    if(E.cierre) html+='<div class="closed"><b>'+(E.cierre.completo?'Cerrado':'Cerrado con faltantes')+'</b> por '+esc(E.cierre.resp)+' · '+fechaHora(E.cierre.t)+(E.cierre.obs?' · '+esc(E.cierre.obs):'')+'</div>';
+    const ops={}; for(const s of E.leidos.values()){ const o=s.op||'Sin nombre'; ops[o]=(ops[o]||0)+1; }
+    if(Object.keys(ops).length) html+='<div class="small">Contaron: '+Object.entries(ops).map(([o,n])=>'<b>'+esc(o)+'</b> '+n).join(' · ')+'</div>';
+  } else if(k!=='anc' && k!=='zona' && k!=='mue') {
+    if(k==='emb') html+='<div class="small"><b>'+x.n+'</b> bultos pasan por embalaje · <b>'+(x.na||0)+'</b> cajas master no aplican (solo pasan a embalaje si son provincia).</div>';
+    html+='<div class="note">El control por bulto de '+st.l+' se activará cuando configuremos su módulo. Por ahora puedes marcar el transporte completo a mano.</div>';
+    html+='<div class="row"><button type="button" class="'+(x.done?'':'okb')+'" id="sgToggle">'+(x.done?'Volver a pendiente':'Marcar '+st.l.toLowerCase()+' completo')+'</button>'+(x.who?'<span class="small muted">Marcado por '+esc(x.who)+'</span>':'')+'</div>';
+  }
+  for(const s of E.sacar) html+='';
+  if(k==='cont' && E.sacar.length){
+    html+='<div class="egrp"><div class="eh" style="background:var(--bad-bg);color:var(--bad)"><span><b>Por sacar</b> · contados aquí y SAP los pasó a otro transporte</span><span>'+E.sacar.length+'</span></div>'+E.sacar.map(z=>'<div class="urow"><span class="dot" style="background:var(--bad)"></span><span class="uc" data-ump="'+z.u+'">'+z.u+'</span><span class="pill p-bad">→ '+esc(nomFl(z.a))+'</span><span class="who">'+esc(z.s.op||'')+' · '+hhmm(z.s.t)+'</span></div>').join('')+'</div>';
+  }
+  const fsel0=(curFil()||{}).f||[]; const fsel=fsel0.length?fsel0:null;
+  if(fsel) html+='<div class="note">Filtro activo: fase '+esc(fsel.join(', '))+'. Solo se muestran los bultos de '+(fsel.length>1?'esas fases':'esa fase')+'.</div>';
+  html+=F.ents.filter(dn=>!fsel || M.entregas.get(dn).bultos.some(u=>inFase(u,fsel))).map(dn=>{ const en0=M.entregas.get(dn); const en=Object.assign({}, en0, {bultos: en0.bultos.filter(u=>inFase(u,fsel))});
+    const rows=en.bultos.map(u=>{ let cls='p-warn', lab='Falta', dot='var(--warn)', who='';
+      if(k==='mue'){ if(F.muelle){ cls='p-ok'; lab=F.muelle; dot='var(--ok)'; } else { lab='Sin muelle'; } who=M.bultos.get(u).ubi||''; }
+      else if(k==='anc'){ const ub=M.bultos.get(u).ubi||''; if(/^AND/i.test(ub)){ cls='p-ok'; lab='Anclado'; dot='var(--ok)'; who=ub; } else { lab='Pendiente'; who=ub||'sin ubicación'; } }
+      else if(k==='cont'){ const s=SC.get(u); if(s && s.fl===fl){ cls='p-ok'; lab='Contado'; dot='var(--ok)'; who=(s.op||'')+' · '+hhmm(s.t); } else if(s){ cls='p-bad'; lab='En '+s.fl; dot='var(--bad)'; who='contado en otro transporte · '+(s.op||''); } }
+      else if(k==='emb' && !pasaEmbalaje(u)){ cls='p-mute'; lab='No aplica · caja master'; dot='var(--muted)'; }
+      else if(x.done){ cls='p-ok'; lab='Completo'; dot='var(--ok)'; }
+      else { lab='Pendiente'; }
+      const b=M.bultos.get(u);
+      return '<div class="urow"><span class="dot" style="background:'+dot+'"></span><span class="uc" data-ump="'+u+'">'+u+'</span><span class="pill '+cls+'">'+esc(lab)+'</span><span class="who">'+(b.items||[]).length+' prod. · '+b.unid+' und'+(who?' · '+esc(who):'')+'</span></div>'; }).join('');
+    const ok = k==='cont' ? en.bultos.filter(u=>E.leidos.has(u)).length : k==='mue' ? (F.muelle?en.bultos.length:0) : k==='anc' ? en.bultos.filter(u=>/^AND/i.test(M.bultos.get(u).ubi||'')).length : (k==='emb' ? (x.done?en.bultos.filter(pasaEmbalaje).length:0) : (x.done?en.bultos.length:0));
+    return '<div class="egrp"><div class="eh"><span>Entrega <b>'+dn+'</b>'+(en.sinUmp?' · <span style="color:var(--warn)">'+en.sinUmp+' sin UMp</span>':'')+'</span><span class="mono">'+ok+'/'+(k==='emb'?en.bultos.filter(pasaEmbalaje).length:en.bultos.length)+'</span></div>'+(rows||'<div class="urow"><span></span><span class="muted">Sin UMp</span></div>')+'</div>'; }).join('');
+  if(k==='cont') html+='<button type="button" id="sgOpen">Abrir en Contabilizado</button>';
+  $('sgBody').innerHTML=html;
+  const tg=$('sgToggle'); if(tg) tg.onclick=()=>{ emit('estado', fl, {codigo:k, resultado: x.done?'Pendiente':'Completo'}); renderStage(); renderAvance(); };
+  const op=$('sgOpen'); if(op) op.onclick=()=>{ $('stageSheet').hidden=true; SG=null; openFlete(fl); };
+}
+$('sgClose').addEventListener('click', ()=>{ $('stageSheet').hidden=true; SG=null; });
+$('stageSheet').addEventListener('click', e=>{ if(e.target.id==='stageSheet'){ $('stageSheet').hidden=true; SG=null; } });
+$('avBody').addEventListener('click', e=>{ const d=e.target.closest('button[data-det]'); if(d){ openStage(d.dataset.det, d.dataset.fl); return; } const g=e.target.closest('button[data-grp]'); if(g){ openInfo('grp', g.dataset.grp); return; } const tr=e.target.closest('button[data-tr]'); if(tr){ openInfo('tr', tr.dataset.tr); return; } });
+$('avBody').addEventListener('click', e=>{ const b=e.target.closest('button[data-st]'); if(!b) return;
+  const st=STAGES.find(s=>s.k===b.dataset.st), fl=b.dataset.fl, cur=manState(fl, st).v;
+  const nxt=st.man[(st.man.indexOf(cur)+1)%st.man.length];
+  emit('estado', fl, {codigo:st.k, resultado:nxt}); renderAvance(); toast(st.l+' de '+fl+': '+nxt); });
+for(const id of ['avQ','avFiltro']) $(id).addEventListener(id==='avQ'?'input':'change', renderAvance);
+$('avClear').addEventListener('click', ()=>{ for(const k in MSEL) MSEL[k].clear(); renderAvance(); });
+$('btnAvance').addEventListener('click', ()=>coordGate(()=>{ show('vAvance'); renderAvance(); }));
+/* ---------- clave de coordinadora ---------- */
+const LK='despacho_coord_v1', LKH='despacho_coord_hash_v1', LK_HRS=14;
+let COORD_PW='', LK_NEXT=null;
+const LKM={};
+const lkGet=k=>{ try{ const v=localStorage.getItem(k); if(v!=null) return v; }catch(e){} return LKM[k]??null; };
+const lkSet=(k,v)=>{ if(v==null) delete LKM[k]; else LKM[k]=v; try{ v==null?localStorage.removeItem(k):localStorage.setItem(k,v); }catch(e){} };
+let LK_MEM=null;
+function coordOk(){ const v=LK_MEM||lkGet(LK); if(!v) return false; const n=+v; return n && Date.now()-n < LK_HRS*3600e3; }
+async function sha(s){ try{ const b=await crypto.subtle.digest('SHA-256', new TextEncoder().encode('tailoy|'+s)); return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(''); }catch(e){ let h=0; for(const c of 'tailoy|'+s) h=(h*31+c.charCodeAt(0))|0; return 'h'+h; } }
+function coordGate(next){
+  if(coordOk()){ next(); return; }
+  LK_NEXT=next; const crear = !CFG && !lkGet(LKH);
+  $('lkMsg').innerHTML = crear ? 'Primera vez en este equipo: <b>crea tu clave de coordinadora</b>. Los operarios no podrán entrar a Coordinadora ni a Avance general sin ella.' : 'Escribe tu clave de coordinadora para entrar.';
+  $('lkPw2').hidden=!crear; $('lkGo').textContent=crear?'Crear clave y entrar':'Entrar';
+  $('lkPw').value=''; $('lkPw2').value=''; $('lkErr').hidden=true; $('lockSheet').hidden=false; setTimeout(()=>$('lkPw').focus(),50);
+}
+function lkFail(m){ $('lkErr').textContent=m; $('lkErr').hidden=false; $('lkGo').disabled=false; }
+async function lkTry(){
+  const pw=$('lkPw').value.trim(); if(!pw){ lkFail('Escribe la clave.'); return; }
+  $('lkGo').disabled=true;
+  if(CFG){
+    try{ await api({accion:'sup_check', clave_sup:pw}, 15000); }
+    catch(e){ const m=String(e.message); lkFail(m==='clave_sup'?'Clave incorrecta.':(m==='accion'?'Falta actualizar el archivo Code.gs en Google (versión nueva del paquete).':'Sin conexión. Intenta otra vez.')); return; }
+  } else {
+    const h=lkGet(LKH), hp=await sha(pw);
+    if(!h){ if(pw.length<4){ lkFail('Usa al menos 4 caracteres.'); return; } if(pw!==$('lkPw2').value.trim()){ lkFail('Las dos claves no coinciden.'); return; } lkSet(LKH, hp); }
+    else if(h!==hp){ lkFail('Clave incorrecta.'); return; }
+  }
+  COORD_PW=pw; LK_MEM=String(Date.now()); lkSet(LK, LK_MEM); $('lkGo').disabled=false; $('lockSheet').hidden=true;
+  if($('supClave') && !$('supClave').value) $('supClave').value=pw;
+  const n=LK_NEXT; LK_NEXT=null; if(n) n();
+}
+function coordSalir(){ LK_MEM=null; lkSet(LK, null); COORD_PW=''; if($('supClave')) $('supClave').value=''; ['infoSheet','stageSheet'].forEach(id=>$(id).hidden=true); goHome(); toast('Saliste de coordinadora.'); }
+$('lkGo').addEventListener('click', lkTry);
+['lkPw','lkPw2'].forEach(id=>$(id).addEventListener('keydown', e=>{ if(e.key==='Enter') lkTry(); }));
+$('lkClose').addEventListener('click', ()=>{ $('lockSheet').hidden=true; LK_NEXT=null; });
+$('lockSheet').addEventListener('click', e=>{ if(e.target.id==='lockSheet'){ $('lockSheet').hidden=true; LK_NEXT=null; } });
+$('btnLockAv').addEventListener('click', coordSalir);
+$('btnLockFl').addEventListener('click', coordSalir);
+$('btnAvHome').addEventListener('click', ()=>goHome());
+$('btnAvExport').addEventListener('click', async ()=>{
+  const rows=[...M.fletes.values()].filter(F=>fleteVisible(F)).map(avRow).sort((a,b)=>a.F.id.localeCompare(b.F.id));
+  const data=rows.map(r=>({Bloque:r.F.bloque, Canal:r.F.canal, 'Documento Flete':r.F.id, Muelle:r.mue.v, Pickeado:r.pick.pct+'%', Auditado:r.aud.v+(r.aud.done?'':' bultos'), Embalado:r.emb.v+(r.emb.done?'':' bultos'), Contabilizado:r.cont.done?r.cont.v:(r.cont.c+'/'+r.cont.n+' bultos'), Anclado:r.anc.v, Fijado:r.fij.v, 'En sitio':r.sit.v+(r.sit.who&&r.sit.v!=='Pendiente'?' ('+r.sit.who+')':''), 'Todo completo':r.allDone?'SÍ':'NO'}));
+  const wb=XLSX.utils.book_new(); sheet(wb,data,'Avance general',{Bloque:'(sin datos)'});
+  { const {S, keys, groups}=renderBD(); const fx=s=>({'% Avance':f1(pct(s.t.ok,s.t.n)), 'OA compl.':s.oa.ok+' / '+s.oa.n, 'Tareas compl.':s.t.ok+' / '+s.t.n, 'Negados':s.neg, 'Tasa negados':f2(pct(s.neg,s.t.n)), 'FO compl.':s.fo.ok+' / '+s.fo.n, 'Docs compl.':s.doc.ok+' / '+s.doc.n});
+    const rowsF=keys.map(k=>{ const [b,c,f,fd]=k.split('|'); return Object.assign({Bloque:b, Canal:c, Fase:f, 'Descripción Fase':fd}, fx(bdScope(groups.get(k)))); });
+    rowsF.push(Object.assign({Bloque:'Total general', Canal:'', Fase:'', 'Descripción Fase':''}, fx(S)));
+    sheet(wb, rowsF, 'Picking por fase', {Bloque:'(sin datos)'}); }
+  const fn='Avance_general_'+stamp()+'.xlsx';
+  let dl=null; try{ dl=window.claude && await window.claude.use('downloads'); }catch(e){}
+  if(dl){ const buf=XLSX.write(wb,{bookType:'xlsx',type:'array'}); try{ await dl.save({filename:fn,data:new Blob([buf])}); toast('Excel listo.'); }catch(e){ if(e&&e.code!=='declined') toast('No se pudo guardar el Excel.'); } }
+  else { try{ XLSX.writeFile(wb,fn); }catch(e){ toast('No se pudo descargar el Excel aquí.'); } }
+});
+
+/* ---------- En sitio ---------- */
+const ST_SIT = () => STAGES.find(s=>s.k==='sit');
+function renderSitio(){
+  $('sitNameBox').hidden = !!ST.operario;
+  const q=$('sitQ').value.trim().toUpperCase(), f=$('sitF').value, st=ST_SIT();
+  const all=[...M.fletes.values()].sort((a,b)=>a.id.localeCompare(b.id));
+  const cnt={Pendiente:0,'En embalaje':0,'En muelle':0};
+  all.forEach(F=>cnt[sitState(F).v]++);
+  $('sitSum').textContent = all.length ? cnt['En muelle']+' en muelle · '+cnt['En embalaje']+' en embalaje · '+cnt.Pendiente+' pendientes de '+all.length+' transportes' : '';
+  const list=all.filter(F=>{ const m=sitState(F); return (!f||m.v===f) && (!q||F.id.includes(q)||nomFl(F.id).toUpperCase().includes(q)||(F.muelle||'').toUpperCase().includes(q)); });
+  $('sitList').innerHTML = !M.fletes.size ? '<div class="empty">Aún no hay reporte del turno.</div>' : (list.map(F=>{ const m=sitState(F), mv=manState(F.id,st).v, cls=m.v==='En muelle'?'s-mue':(m.v==='En embalaje'?'s-emb':'s-pen');
+    return '<div class="sit '+cls+'"><div class="top1"><span class="sfl">'+esc(nomFl(F.id))+'</span><span class="pill '+(m.v==='En muelle'?'p-ok':(m.v==='En embalaje'?'p-info':'p-warn'))+'">'+esc(m.v)+'</span></div>'
+      +'<div class="meta">'+esc(F.bloque||'—')+' · '+esc(F.canal||'—')+' · Muelle '+esc(F.muelle||'—')+' · '+F.bultos.length+' bultos</div>'
+      +(m.auto ? '<div class="now muted">'+(m.ec&&m.v==='En embalaje' ? 'E-commerce: sigue en embalaje hasta que lo marques <b>En muelle</b>' : (m.v==='Pendiente'?'Sin ubicación en SAP':'Automático según ubicación SAP ('+(m.nA?m.nA+' AND':'')+(m.nA&&m.nP?' · ':'')+(m.nP?m.nP+' PEMB-SALIDA':'')+')'))+'</div>' : '<div class="now">Marcado por <b>'+esc(m.who)+'</b> <span class="muted small">· toca de nuevo para volver a automático</span></div>')
+      +'<div class="opts"><button type="button" class="e'+(mv==='En embalaje'?' on':'')+'" data-sit="En embalaje" data-fl="'+esc(F.id)+'" aria-pressed="'+(mv==='En embalaje')+'">En embalaje</button><button type="button" class="m'+(mv==='En muelle'?' on':'')+'" data-sit="En muelle" data-fl="'+esc(F.id)+'" aria-pressed="'+(mv==='En muelle')+'">En muelle</button></div></div>'; }).join('') || '<div class="empty">Ningún transporte coincide.</div>');
+}
+$('sitList').addEventListener('click', e=>{ const b=e.target.closest('button[data-sit]'); if(!b) return;
+  if(!ST.operario){ const n=$('sitName').value.trim(); if(n.length<3){ toast('Escribe tu nombre primero.'); $('sitName').focus(); return; } ST.operario=n; save(); }
+  const fl=b.dataset.fl, cur=manState(fl, ST_SIT()).v, v = cur===b.dataset.sit ? 'Pendiente' : b.dataset.sit;
+  emit('estado', fl, {codigo:'sit', resultado:v}); toast(nomFl(fl)+': '+v); renderSitio(); });
+$('sitQ').addEventListener('input', renderSitio);
+$('sitF').addEventListener('change', renderSitio);
+$('btnSitHome').addEventListener('click', ()=>goHome());
+
+/* ---------- inicio ---------- */
+const MODS={auditado:'Auditado', embalado:'Embalado', contabilizado:'Contabilizado'};
+function renderHome(){
+  $('homeName').textContent=ST.operario||'equipo'; $('btnOp2').hidden=!CFG;
+  let cer=0; for(const id of M.fletes.keys()){ const e=estadoFlete(id)[0]; if(e==='cer'||e==='des') cer++; }
+  if(M.fletes.size){ const rs=[...M.fletes.values()].map(avRow); const done=rs.filter(r=>r.allDone).length; $('avHomeStat').textContent=done+' de '+rs.length+' transportes con todas las etapas completas · '+rs.filter(r=>r.pick.done).length+' pickeados · '+rs.filter(r=>r.anc.done).length+' anclados'; }
+  { const st=STAGES.find(s=>s.k==='sit'); let em=0, mu=0; for(const F of M.fletes.values()){ const v=sitState(F).v; if(v==='En muelle') mu++; else if(v==='En embalaje') em++; }
+    $('sitStat').textContent = M.fletes.size ? mu+' en muelle · '+em+' en embalaje · '+(M.fletes.size-mu-em)+' pendientes' : 'Sin reporte del turno'; }
+  $('homeStat').textContent = M.fletes.size ? SC.size+' de '+M.bultos.size+' bultos contados · '+cer+' de '+M.fletes.size+' transportes cerrados' : 'Sin reporte del turno';
+}
+function goHome(){ camOff(); show('vHome'); renderHome(); paintSync(); }
+function openMod(m){
+  if(m==='sitio'){ show('vSitio'); renderSitio(); paintSync(); return; }
+  if(m==='contabilizado'){ show('vScan'); renderScan(false); paintSync(); if(matchMedia('(pointer:fine)').matches && !$('code').closest('[hidden]')) $('code').focus(); return; }
+  $('modTag').textContent=MODS[m]; $('modTitle').textContent=MODS[m]; show('vMod');
+}
+document.querySelectorAll('[data-mod]').forEach(b=>b.addEventListener('click', ()=>openMod(b.dataset.mod)));
+$('btnHome').addEventListener('click', goHome);
+$('btnModHome').addEventListener('click', goHome);
+$('btnOp2').addEventListener('click', ()=>{ $('inNombre').value=ST.operario; show('vNombre'); });
+function start(){
+  $('syncBar').hidden=!CFG; $('syncBar2').hidden=!CFG; $('supPanel').hidden=!CFG;
+  $('localLoad').hidden=!!CFG; $('btnResetAll').hidden=!!CFG;
+  if(CFG && !ST.operario){ show('vNombre'); setTimeout(()=>$('inNombre').focus(),50); return; }
+  $('syncBar3').hidden=!CFG;
+  goHome();
+  if(CFG){ pull(); if(!start.t){ start.t=setInterval(()=>{ if(!document.hidden) pull(); }, 8000); setInterval(paintSync, 5000); } }
+}
+load(); M=build(ST.bd?ST.bd.rows:[], ST.bd?ST.bd.cambios:[]); refold(); start();
+</script>
+</body></html>

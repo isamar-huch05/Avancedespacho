@@ -1,0 +1,61 @@
+DESPACHO POR FLETE — guía de instalación (unos 10 minutos, una sola vez)
+========================================================================
+
+Archivos:
+  index.html   → la app (va a GitHub Pages)
+  config.js    → la dirección del Apps Script (va a GitHub Pages)
+  Code.gs      → el servidor (va al Apps Script de una hoja de Google)
+
+PASO 1 · Hoja de Google + Apps Script
+  1. Crear una hoja de cálculo nueva en Google Sheets (ej. "Despacho por Flete - Tai Loy").
+  2. Extensiones → Apps Script. Borrar lo que haya y pegar TODO el contenido de Code.gs.
+  3. Cambiar arriba las dos claves:
+       CLAVE      = la que usarán todos los celulares
+       CLAVE_SUP  = solo para la coordinadora (publicar el reporte y entrar a Coordinadora / Avance general)
+     Guardar.
+  4. Implementar → Nueva implementación → tipo "Aplicación web".
+       Ejecutar como: Yo
+       Quién tiene acceso: Cualquier usuario
+     Implementar → autorizar permisos → copiar la URL (termina en /exec).
+
+PASO 2 · config.js
+  Pegar la URL /exec en "url" y poner la misma CLAVE que en Code.gs.
+
+PASO 3 · GitHub Pages
+  1. Repositorio nuevo (ej. "despacho-flete"), subir index.html y config.js.
+  2. Settings → Pages → Deploy from a branch → main / (root) → Save.
+  3. Link final: https://USUARIO.github.io/despacho-flete/
+
+CÓMO SE USA
+  · Al abrir: pantalla de inicio con "Avance general" y 3 módulos (Auditado, Embalado, Contabilizado).
+  · Avance general: filtros de Bloque, Canal y Fase arriba, con varias opciones a la vez (cambian toda la pantalla). Luego, "Status de picking" (órdenes, tareas, negados, FO y
+    entregas completas, y el detalle por fase). Debajo, tabla por transporte. Pickeado y Anclado salen de la hoja BD.
+    Etapas: Auditado, Embalado, Contabilizado, Anclado y Zona se miden por bulto (UMp);
+    Embalado no cuenta las cajas master (fases "caja master"), salvo provincia.
+    Pickeado, Fijado y Muelle por transporte. Muelle y Zona salen de las columnas
+    Muelle y Zona de la hoja BD. Toca cualquier tarjeta o celda para ver
+    el detalle superpuesto (Fijado se marca ahí y guarda historial). Se exporta a Excel.
+  · Operarios: abren el link en Chrome y ponen su nombre (una vez), entran a Contabilizado.
+    Eligen el transporte (tocándolo o escribiendo los últimos números) y escanean.
+    Por cada UMp la app dice: CORRECTO (con el conteo 12/25), YA CONTADO (quién y a qué hora)
+    o NO VA EN ESTE TRANSPORTE (y en cuál va). Cada lectura queda con nombre y hora.
+    Con pistola RF: leer en el campo "Pistola RF". Recomendado: "Agregar a pantalla de inicio".
+  · Isa: botones "Coordinadora" y "Avance general" (piden la clave CLAVE_SUP; los operarios no entran)
+    Botón "Coordinadora" → avance por transporte, quién está contando, bultos por mover,
+    incidencias, cierre y Excel.
+    "Publicar reporte del turno": elegir el REPORTE (.xlsm, hoja BD) + clave de coordinadora.
+      - Al iniciar el turno: marcar "Empezar turno nuevo".
+      - Cada vez que se vuelve a descargar de SAP: publicar SIN marcar "turno nuevo".
+  · Cambio de transporte: si una UMp ya se contó en el transporte A y SAP la pasa al B,
+    aparece en "Bultos por mover". El transporte A no se puede cerrar hasta resolverlo.
+    Al volver a escanear la UMp en el transporte B, queda resuelta.
+  · Sin señal, las lecturas se guardan en el celular y se envían solas.
+  · Historial completo en la hoja EVENTOS (UMp, transporte, operario, hora, resultado, cierres).
+
+Si se cambia Code.gs después: Implementar → Administrar implementaciones → editar →
+Versión: "Nueva versión" (así la URL /exec no cambia).
+
+
+ACTUALIZACIÓN (clave de coordinadora)
+  Si ya estaba instalado: pegar el Code.gs nuevo en Apps Script → Implementar → Gestionar implementaciones →
+  editar → Versión: Nueva versión → Implementar (la URL no cambia). Luego subir el index.html nuevo a GitHub.
